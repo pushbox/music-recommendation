@@ -4,7 +4,7 @@ const _ = require("lodash");
 const cheerio = require("cheerio");
 const moment = require("moment");
 const PouchDB = require("pouchdb").default;
-const { removeBlankToSpace } = require("./api");
+const { removeBlankToSpace, httpGet } = require("./api");
 import md5 from "js-md5";
 
 import LastFM  from './lastfm'
@@ -25,22 +25,22 @@ var dailyDb = new PouchDB("daily_albums");
 //     };
 //   });
 
-function httpGet(url, timeout = 5000) {
-  return new Promise((resolve, reject) => {
-    console.log("window.$_musichelper", url);
-    window.$_musichelper.httpGet({ url: url }, function(error, data) {
-      //   console.log("window.$_musichelper", error, data);
-      if (error) {
-        reject(error);
-      } else {
-        resolve(data);
-      }
-    });
-    setTimeout(function() {
-      reject("timeout");
-    }, timeout);
-  });
-}
+// function httpGet(url, timeout = 5000) {
+//   return new Promise((resolve, reject) => {
+//     console.log("window.$_musichelper", url);
+//     window.$_musichelper.httpGet({ url: url }, function(error, data) {
+//       //   console.log("window.$_musichelper", error, data);
+//       if (error) {
+//         reject(error);
+//       } else {
+//         resolve(data);
+//       }
+//     });
+//     setTimeout(function() {
+//       reject("timeout");
+//     }, timeout);
+//   });
+// }
 
 function getTop(typeFn, recentSongs) {
   const topAlbums = recentSongs.reduce((total, row) => {

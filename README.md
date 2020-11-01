@@ -1,4 +1,6 @@
-# music-recommentdation-vuecli4
+# 音乐推荐
+
+> 基于Last.FM的音乐推荐引擎
 
 ## Project setup
 ```

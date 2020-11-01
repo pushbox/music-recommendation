@@ -27,7 +27,11 @@ import radio from "ant-design-vue/lib/radio"; // 加载 JS
 Vue.use(radio);
 
 
+import checkbox from "ant-design-vue/lib/checkbox"; // 加载 JS
+Vue.use(checkbox);
 
+
+;
 router.afterEach((to, from) => {
   // 每次进入路由都会触发
   if (window._hmt) {

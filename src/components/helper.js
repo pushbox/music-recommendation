@@ -3,8 +3,13 @@ const _ = require("lodash");
 // const fs = require("fs");
 const cheerio = require("cheerio");
 const moment = require("moment");
-var PouchDB = require("pouchdb").default;
+const PouchDB = require("pouchdb").default;
+const { removeBlankToSpace } = require("./api");
 import md5 from "js-md5";
+
+import LastFM  from './lastfm'
+import Douban  from "./douban.js"
+
 PouchDB.plugin(require("pouchdb-find").default);
 var dailyDb = new PouchDB("daily_albums");
 // var trash = new PouchDB("trash-articles");
@@ -56,96 +61,275 @@ function getTop(typeFn, recentSongs) {
   return _.sortBy(ar, "count").reverse();
 }
 
-class LastFM {
-  constructor(_artist, _album) {
-    this.artist = _artist;
-    this.album = _album;
-  }
+// class LastFM {
+//   constructor(_artist, _album) {
+//     this.artist = _artist;
+//     this.album = _album;
+//   }
 
-  async getSimliarAlbums() {
-    if (this.album && this.artist) {
-      return await this.getSimliarAlbumsByAlbum();
-    }
-    return await this.getSimliarAlbumsByArtist();
-  }
+//   async getSimliarAlbums() {
+//     if (this.album && this.artist) {
+//       return await this.getSimliarAlbumsByAlbum();
+//     }
+//     return await this.getSimliarAlbumsByArtist();
+//   }
 
-  async getSimliarAlbumsByAlbum() {
-    console.log("getSimliarAlbumsByAlbum");
-    const pageURL = `https://www.last.fm/music/${this.artist}/${this.album}`
-      .replace(new RegExp(String.fromCharCode(160), "g"), " ")
-      .split(" ")
-      .join("+");
-    console.log("pageURL", pageURL);
-    const pageData = await this.extractPageData(pageURL);
-    return pageData.simliarAlbums;
-  }
+//   async getSimliarAlbumsByAlbum() {
+//     console.log("getSimliarAlbumsByAlbum");
+//     const pageURL = `https://www.last.fm/music/${this.artist}/${this.album}`
+//       .replace(new RegExp(String.fromCharCode(160), "g"), " ")
+//       .split(" ")
+//       .join("+");
+//     console.log("pageURL", pageURL);
+//     const pageData = await this.extractPageData(pageURL);
+//     return pageData.simliarAlbums;
+//   }
 
-  async extractPageData(url) {
-    const pageHtml = await httpGet(url);
-    const $ = cheerio.load(pageHtml);
-    const simDoms = $(".similar-albums-item-wrap");
-    let simliarAlbums = [];
-    for (let index = 0; index < simDoms.length; index++) {
-      const simDom = simDoms.eq(index);
-      simliarAlbums.push({
-        cover: simDom.find(".similar-albums-item-image img").attr("src"),
-        artist: simDom.find(".similar-albums-item-artist").text(),
-        album: simDom.find(".similar-albums-item-name").text(),
-        listeners: simDom.find(".similar-albums-item-listeners").text()
-      });
-    }
+//   async extractPageData(url) {
+//     const pageHtml = await httpGet(url);
+//     const $ = cheerio.load(pageHtml);
+//     const simDoms = $(".similar-albums-item-wrap");
+//     let simliarAlbums = [];
+//     for (let index = 0; index < simDoms.length; index++) {
+//       const simDom = simDoms.eq(index);
+//       simliarAlbums.push({
+//         cover: simDom.find(".similar-albums-item-image img").attr("src"),
+//         artist: simDom.find(".similar-albums-item-artist").text(),
+//         album: simDom.find(".similar-albums-item-name").text(),
+//         listeners: simDom.find(".similar-albums-item-listeners").text()
+//       });
+//     }
 
-    let currentAlbum = null;
-    currentAlbum = {
-      album: this.album,
-      artist: this.artist,
-      listeners: $(".header-metadata-tnew-item--listeners abbr").attr("title"),
-      plays: $(".header-metadata-tnew-item--scrobbles abbr").attr("title"),
-      tags: $(".tags-list--global li a")
-        .map(function() {
-          return $(this).text();
+//     let currentAlbum = null;
+//     currentAlbum = {
+//       type: 'lastfm',
+//       album: this.album,
+//       artist: this.artist,
+//       listeners: $(".header-metadata-tnew-item--listeners abbr").attr("title"),
+//       plays: $(".header-metadata-tnew-item--scrobbles abbr").attr("title"),
+//       tags: $(".tags-list--global li a")
+//         .map(function() {
+//           return {
+//             name: $(this).text(),
+//           };
+//         })
+//         .get()
+//     };
+
+//     simliarAlbums = simliarAlbums.map(_ => {
+//       _.rec_by = currentAlbum;
+//       _.artist = _.artist && _.artist.trim();
+//       _.album = _.album && _.album.trim();
+//       _.listeners = parseInt(
+//         _.listeners
+//           .trim()
+//           .replace(" listeners", "")
+//           .replace(new RegExp(",", "g"), "")
+//       );
+//       return _;
+//     });
+
+//     console.log(simliarAlbums, $(".similar-albums-item-wrap").length);
+//     return {
+//       simliarAlbums
+//     };
+//   }
+
+//   async getSimliarAlbumsByArtist() {
+//     return [];
+//   }
+// }
+
+// class Douban {
+//   constructor(_artist, _album) {
+//     this.artist = _artist;
+//     this.album = _album;
+//   }
+
+//   async getSimliarAlbums() {
+//     if (this.album && this.artist) {
+//       return await this.getSimliarAlbumsByAlbum();
+//     }
+//     return await this.getSimliarAlbumsByArtist();
+//   }
+
+//   async getSimliarAlbumsByAlbum() {
+//     console.log("getSimliarAlbumsByAlbum");
+//     const searchUrl =
+//         `https://search.douban.com/music/subject_search?search_text=` +
+//         encodeURIComponent(`${this.artist} ${this.album}`);
+//     console.log("searchUrl", searchUrl);
+//     const pageData = await this.extractPageData(searchUrl);
+//     return pageData.simliarAlbums;
+//   }
+
+//   async extractPageData(url) {
+//     const apiURL ="https://api.douban.com/v2/music/search?q=" +  encodeURIComponent(`${this.artist} ${this.album}`);
+//     const searchReult = await httpGet(apiURL);
+
+//     function safeCompare(v1, v2) {
+//       return v1
+//         .replace(new RegExp(String.fromCharCode(160), "g"), " ")
+//         .indexOf(v2.replace(new RegExp(String.fromCharCode(160), "g"), " ")) > -1;
+//     }
+//     let simliarAlbums = [];
+//     let netPageUrl = null
+//     let albumMeta = null
+//     if (searchReult.count) {
+//       searchReult.musics = searchReult.musics.filter(_ => {
+//         _.attrs.singer = _.attrs.singer.map(c =>
+//           c.replace(new RegExp(String.fromCharCode(160), "g"), " ")
+//         );
+//         if (
+//           safeCompare(_.title, this.album) &&
+//           _.attrs.singer.indexOf(this.artist) > -1
+//         ) {
+//           return true;
+//         }
+//         console.log({
+//           title: _.title,
+//           ceck: _.title
+//             .toLocaleLowerCase()
+//             .replace(new RegExp(String.fromCharCode(160), "g"), " ")
+//             .indexOf(
+//               this.album
+//                 .toLocaleLowerCase()
+//                 .replace(new RegExp(String.fromCharCode(160), "g"), " ")
+//             ),
+//           ac: _.attrs.singer.indexOf(this.artist),
+//           singer: _.attrs.singer,
+//         });
+//         return false
+//       });
+
+//       if(searchReult.musics.length) {
+//         albumMeta = searchReult.musics[0];
+//         netPageUrl = albumMeta.alt;
+//         // albumMeta = 
+//       }
+//     } 
+
+//     if (netPageUrl == null) {
+//       return {
+//         simliarAlbums,
+//       };
+//     }
+
+//       // console.log(
+//       //   searchReult,
+//       //   "searchReult",
+//       //   this.album,
+//       //   this.artist,
+//       //   netPageUrl
+//       // );
+//     const pageHtml = await httpGet(netPageUrl);
+//     const $ = cheerio.load(pageHtml);
+//     const simDoms = $("#db-rec-section .subject-rec-list");
+
+
+//     for (let index = 0; index < simDoms.length; index++) {
+//       const simDom = simDoms.eq(index);
+//       simliarAlbums.push({
+//         cover: simDom.find(".m_sub_img").attr("src"),
+//         // artist: simDom.find(".similar-albums-item-artist").text(),
+//         album: simDom.find("dd").text(),
+//         album_id: simDom.find("dd a").attr('href'),
+//         // listeners: simDom.find(".similar-albums-item-listeners").text(),
+//       });
+//     }
+
+//     let currentAlbum = null;
+//     currentAlbum = {
+//       type: 'douban',
+//       album: this.album,
+//       artist: this.artist,
+//       rating: albumMeta.rating,
+//       tags: albumMeta.tags,
+//       attr: albumMeta.attrs,
+//     };
+//     simliarAlbums = simliarAlbums.map((_) => {
+//       _.rec_by = currentAlbum;
+//       _.album = _.album && _.album.trim();
+//       _.album_id = _.album_id && _.album_id.split("/")[4];
+//       // _.type = "dou"
+//       return _;
+//     });
+
+//     console.log(simliarAlbums, albumMeta, $(".similar-albums-item-wrap").length);
+//     return {
+//       simliarAlbums,
+//     };
+//   }
+
+//   async getSimliarAlbumsByArtist() {
+//     return [];
+//   }
+// }
+
+
+async function getSimliarAlbumsByPlatform(type, topAlbums, conCount) {
+  let totalAlbums = []
+  const stepItems = chunk(topAlbums, conCount);
+  console.log(
+    "stepItems",
+    stepItems,
+    "getSimliarAlbumsByPlatform",
+    type, conCount
+  );
+  for (let index = 0; index < stepItems.length; index++) {
+    const stepAlbums = stepItems[index];
+    try {
+      const results = await Promise.all(
+        stepAlbums.map((al) => {
+          const driver = type == 'lastfm' ? new LastFM(al.artist, al.album) : new Douban(al.artist, al.album); 
+          return driver.getSimliarAlbums();
         })
-        .get()
-    };
-
-    simliarAlbums = simliarAlbums.map(_ => {
-      _.rec_by = currentAlbum;
-      _.artist = _.artist && _.artist.trim();
-      _.album = _.album && _.album.trim();
-      _.listeners = parseInt(
-        _.listeners
-          .trim()
-          .replace(" listeners", "")
-          .replace(new RegExp(",", "g"), "")
       );
-      return _;
-    });
-
-    console.log(simliarAlbums, $(".similar-albums-item-wrap").length);
-    return {
-      simliarAlbums
-    };
+      // const albums = await type.getSimliarAlbums();
+      // if (albums.length) {
+      //   allAlbums = allAlbums.concat(albums);
+      // }
+      results.forEach((_) => {
+        if (_.length) {
+          totalAlbums = totalAlbums.concat(_);
+        }
+      });
+    } catch (e) {
+      console.log('run.error', e)
+    }
+    console.log("step", index, "done", stepItems.length, stepAlbums);
   }
-
-  async getSimliarAlbumsByArtist() {
-    return [];
-  }
+  return totalAlbums;
 }
 
-async function getSimliarAlbums(data) {
-  const types = [new LastFM(data.artist, data.album)];
-  let allAlbums = [];
-  for (let index = 0; index < types.length; index++) {
-    const type = types[index];
-    try {
-      const albums = await type.getSimliarAlbums();
-      if (albums.length) {
-        allAlbums = allAlbums.concat(albums);
-      }
-    } catch (e) {}
-  }
-  // console.log(allAlbums, allAlbums.length);
-  return allAlbums;
+async function getSimliarAlbums(albums) {
+  const types = [
+    {
+      type: "lastfm",
+    },
+    {
+      type: "douban",
+      count: 1
+    },
+  ];
+  let totalAlbums = [];
+  try {
+      const results = await Promise.all(
+        types.map((_) => {
+          const cCount = _.count || 5;
+          return getSimliarAlbumsByPlatform(_.type, albums, cCount);
+        })
+      );
+      results.forEach((_, index) => {
+        if (_.length) {
+          totalAlbums = totalAlbums.concat(_);
+          console.log("found.album", _.length, types[index]);
+        }
+      });
+  } catch (e) {}
+ 
+  console.log("getSimliarAlbums.totalAlbums", totalAlbums.length, totalAlbums);
+  return totalAlbums;
 }
 
 const chunk = (arr, size) =>
@@ -153,7 +337,7 @@ const chunk = (arr, size) =>
     arr.slice(i * size, i * size + size)
   );
 
-export async function getAlbums(recentSongs) {
+export async function getAlbums(recentSongs, opts = {}) {
   const songhash = md5(JSON.stringify(recentSongs));
   console.log(topAlbums, topArtists);
   let totalAlbums = [];
@@ -171,10 +355,10 @@ export async function getAlbums(recentSongs) {
 
   const todyStr = moment().format("YYYYMMDD");
   const docId = `${todyStr}_albums_v2`;
-  const force = false;
+  const force = opts.force || false;
   let uniqueAlbums = [];
   let startTime = Date.now();
-  let conCount = 5;
+  let conCount = 1;
   let caceDoc = null;
   try {
     caceDoc = await dailyDb.get(docId);
@@ -188,54 +372,57 @@ export async function getAlbums(recentSongs) {
   );
   if (
     caceDoc == null ||
+    (caceDoc != null && caceDoc.albums.length == 0) ||
     (caceDoc != null && !caceDoc.songhash) ||
     (caceDoc != null && caceDoc.songhash && caceDoc.songhash != songhash) ||
     force
   ) {
-    const stepItems = chunk(topAlbums, conCount);
-    console.log("stepItems", stepItems);
-    for (let index = 0; index < stepItems.length; index++) {
-      const stepAlbums = stepItems[index];
-      try {
-        const results = await Promise.all(
-          stepAlbums.map(al => {
-            return getSimliarAlbums(al);
-          })
-        );
-        results.forEach(_ => {
-          if (_.length) {
-            totalAlbums = totalAlbums.concat(_);
-          }
-        });
-      } catch (e) {}
-      // const p = [];
-      // for (let c = 0; c < stepAlbums.length; c++) {
-      //   const topAlbum = topAlbums[c];
-      //   p.push(getSimliarAlbums(topAlbum));
-      // }
-      // try {
-      //   const results = await Promise.all(p);
-      //   results.forEach(_ => {
-      //     if (_.length) {
-      //       totalAlbums = totalAlbums.concat(_);
-      //     }
-      //   });
-      //   console.log(results);
-      // } catch (e) {}
-
-      console.log("step", index, "done", stepItems.length, stepAlbums);
-    }
+    // const stepItems = chunk(topAlbums, conCount);
+    // console.log("stepItems", stepItems);
+    // for (let index = 0; index < stepItems.length; index++) {
+    //   const stepAlbums = stepItems[index];
+    //   try {
+    //     const results = await Promise.all(
+    //       stepAlbums.map(al => {
+    //         return getSimliarAlbums(al);
+    //       })
+    //     );
+    //     results.forEach(_ => {
+    //       if (_.length) {
+    //         totalAlbums = totalAlbums.concat(_);
+    //       }
+    //     });
+    //   } catch (e) {}
+    //   // const p = [];
+    //   // for (let c = 0; c < stepAlbums.length; c++) {
+    //   //   const topAlbum = topAlbums[c];
+    //   //   p.push(getSimliarAlbums(topAlbum));
+    //   // }
+    //   // try {
+    //   //   const results = await Promise.all(p);
+    //   //   results.forEach(_ => {
+    //   //     if (_.length) {
+    //   //       totalAlbums = totalAlbums.concat(_);
+    //   //     }
+    //   //   });
+    //   //   console.log(results);
+    //   // } catch (e) {}
+    //   // break;
+    //   // console.log("step", index, "done", stepItems.length, stepAlbums);
+    // }
     // return []
+    totalAlbums = await getSimliarAlbums(topAlbums);
     const byImages = _.groupBy(totalAlbums, "cover");
-    uniqueAlbums = Object.keys(byImages).map(_ => {
+    uniqueAlbums = Object.keys(byImages).map((_) => {
       byImages[_][0].repeatCount = byImages[_].length;
       return byImages[_][0];
     });
+    console.log("uniqueAlbums", uniqueAlbums.length);
     var doc = {
       _id: docId,
       albums: uniqueAlbums,
       songhash: songhash,
-      updateTime: Date.now()
+      updateTime: Date.now(),
     };
     if (caceDoc == null) {
       var res = await dailyDb.put(doc);
@@ -246,7 +433,7 @@ export async function getAlbums(recentSongs) {
           _id: caceDoc._id,
           _rev: doc._rev,
           albums: uniqueAlbums,
-          songhash: songhash
+          songhash: songhash,
         });
         console.log("saveDoc", saveDoc);
         return dailyDb.put(saveDoc);
@@ -271,9 +458,9 @@ export async function getXiamiCollect() {
     const allSongs = recentSongs.data.songs.map(_ => {
       return {
         type: "xiami",
-        album: _.album_name,
-        artist: _.artist_name,
-        song: _.name
+        album: removeBlankToSpace(_.album_name),
+        artist: removeBlankToSpace(_.artist_name),
+        song: removeBlankToSpace(_.name),
       };
     });
     return allSongs;
@@ -378,5 +565,10 @@ export async function _getCloudMusicCollect() {
   console.log(playListUrl, $$("*"), rows);
   //   const playListHtml = await httpGet(playListUrl);
   // console.log(playListHtml);
-  return rows;
+  return rows.map(_ => {
+    _.album = removeBlankToSpace(_.album)
+    _.artist = removeBlankToSpace(_.artist);
+    _.song = removeBlankToSpace(_.song);
+    return _;
+  });
 }

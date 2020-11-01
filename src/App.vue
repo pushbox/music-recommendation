@@ -43,7 +43,7 @@
         </a-menu>
       </a-layout-sider>
       <a-layout style="height:100vh; overflow-y:scroll">
-        <a-layout-content :style="{ margin: '24px 16px', minHeight: '280px' }">
+        <a-layout-content :style="{ margin: '20px 16px', minHeight: '280px' }">
           <a-row>
             <router-view></router-view>
           </a-row>

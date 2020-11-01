@@ -43,12 +43,20 @@
             正在扫描你最近收藏的歌曲...
           </p>
           <p v-if="fetchSimliar">
-          正在生成今天的推荐...
+          正在生成今天的推荐...<br>
+          不要关闭页面！
           </p>
        </div>
     </div>
+    <div class="filter-bar" v-if="!fetchSimliar && !isScaning">
+      <a-radio-group :options="sortOptions" v-model="sortByType" style="margin-right: 30px"/>
+      <a-checkbox v-model="exludeListened">
+            排除听过的
+      </a-checkbox>
+      <a-radio-group :options="sourceOptions" v-model="bySource" style="margin-right: 30px"/>
+    </div>
     <ul>
-      <li v-for="album in albums" :key="album.cover" class="album-item">
+      <li v-for="album in showAlbums" :key="album.cover" class="album-item">
         <div class="image">
           <div class="cover-image">
               <div class="layout-image">
@@ -60,8 +68,8 @@
           <h3 class="album-title">{{ album.album }}</h3>
           <!-- <p> {{ album.album }} </p> -->
           <p class="desc">
-            {{ album.artist }}<br>
-            {{ album.listeners }} 人听过<br>
+            <template v-if="album.artist">{{ album.artist }}<br></template>
+            <template v-if="album.listeners">{{ album.listeners }} 人听过<br></template>
             <span class="outlinks" style="margin-top:10px; display: inline-block;"><a :href="album.cloudmusicLink" target="_blank">
               <img src="@/assets/163.png" height="18"/>
             </a>
@@ -74,6 +82,7 @@
         </div>
       </li>
     </ul>
+    <div v-if="albums.length" style="padding: 10px">{{ showAlbums.length }}</div>
   </div>
 </div>
 </template>
@@ -81,8 +90,16 @@
 
 <script>
 import { getAlbums, getCloudMusicCollect, getXiamiCollect } from './helper'
+import axios from 'axios'
+
+const api = axios.create({
+  baseURL: "http://localhost:8956",
+  timeout: 4000
+});
+
 var PouchDB = require("pouchdb").default;
 var recentDb = new PouchDB("recent_songs");
+const _ = require('lodash')
 import ScaleLoader from 'vue-spinner/src/ScaleLoader.vue'
 export default {
   name: 'HelloWorld',
@@ -93,7 +110,24 @@ export default {
       albums: [],
       isScaning: false,
       notFound: false,
+      exludeListened: false,
+      sortByListeners: false,
+      albumsIsCollected: [],
       fetchSimliar: false,
+      allAlbumIndex: {},
+      sortByType: 'rec',
+      bySource: 'all',
+      sourceOptions: [
+        { label: '全部', value: 'all' },
+        { label: '豆瓣音乐', value: 'douban' },
+        { label: 'last.fm', value: 'lastfm' },
+      ],
+      sortOptions: [
+        { label: '热门排序', value: 'top' },
+        { label: '冷门排序', value: 'down' },
+        { label: '推荐重复度排序', value: 'rec' }
+      ],
+      // showAlbums: [],
       songs: null
     }
   },
@@ -111,9 +145,98 @@ export default {
     // setTimeout(() => {
     //   this.recom();
     // }, 1000)
+    this.loadLocalData();
+  },
+  watch: {
+    albumsIsCollected() {
+      const aIndex = {};
+      this.albumsIsCollected.forEach(_ => {
+        aIndex[_.album] = [_];
+      });
+      this.allAlbumIndex = aIndex;
+      console.log('allAlbumIndex created', this.allAlbumIndex)
+    }
+  },
+  computed: {
+    showAlbums() {
+      let dataSet = this.albums.filter(_ => {
+        if(this.exludeListened) {
+          // const isInLibiary = this.albumsIsCollected.filter(ab => ab.album_name == _.album)
+          const isInLibiary = this.allAlbumIndex[_.album]
+          if(isInLibiary && isInLibiary.length) {
+            console.log('isInLibiary', isInLibiary)
+            return false
+          }
+        }
+        if(this.bySource != "all") {
+          console.log('_.type', _.type)
+          if(this.bySource != _.type) {
+            return false
+          }
+        }
+        return true;
+      })
+      // if(this.sortByListeners) {
+      if(this.sortByType == "rec") {
+        dataSet = _.sortBy(dataSet, "repeatCount").reverse()
+      }
+
+      if(this.sortByType == "top") {
+        dataSet = _.orderBy(dataSet, ["listeners"], ['desc'])
+      }
+
+      if(this.sortByType == "down") {
+        const nodata = dataSet.filter(_ => _.listeners == 0);
+        const datasortwed = _.orderBy(dataSet.filter(_ => _.listeners > 0), ["listeners"], ['asc'])
+        // dataSet = _.orderBy(dataSet, ["listeners"], ['asc'])
+        dataSet = [].concat(datasortwed, nodata)
+        // dataSet = dataSet.sort(function(a, b) {
+        //   if(a.listeners == 0) {
+        //     return true
+        //   }
+        //   return a.listeners > b.listeners
+        // })
+      }
+        
+      // }
+
+      return dataSet
+    }
   },
   methods: {
-    async recom() {
+    async loadLocalData() {
+      let isAlive = true
+      try {
+        const { data } = await api.get('/api/song/query', {
+         params: {
+            rawSql: 'select count(distinct(song_name)) as songs, album_name as album, artist_name as artist, album_logo from songs group by album_name, artist_name  order by songs desc',
+          }
+        });
+        this.albumsIsCollected = data;
+      } catch (e) {
+        isAlive = false
+        // this.albumsIsCollected = 
+      }
+
+      if(!isAlive) {
+        try {
+            const eDoc = await recentDb.get("all_songs")
+            // eDoc.all_songs = {
+            //   xiami: allData[0],
+            //   cloudmusic: allData[1]
+            // }
+
+            const allRows = [].concat(eDoc.all_songs.xiami, eDoc.all_songs.cloudmusic)
+            // console.log('eDoc.all_songs ', eDoc.all_songs )
+            this.albumsIsCollected = allRows
+            // eDoc.all_songs = Date.now()
+            // await recentDb.put(eDoc)
+        } catch (e) {}
+      }
+     
+      // console.log('loadLocalData', data)
+    },
+    async recom(force = false) {
       const recentDocId = 'recent';
       let cacheDoc = null
       try {
@@ -179,20 +302,24 @@ export default {
       // rencetSongs = rencetSongs.slice(0, 50)
       console.log('rencetSongs', rencetSongs)
       this.fetchSimliar = true
-      const albums = await getAlbums(rencetSongs)
+      const albums = await getAlbums(rencetSongs, {
+        // force: true
+      })
       this.fetchSimliar = false
-      this.albums = albums.map(_ => {
+      const parsedAlbums = albums.map(_ => {
         _.cover = _.cover.replace('https://', '').replace('.webp', '')
         _.cover = `https://i1.wp.com/${_.cover}`
-        var searchWordReal = `${_.artist} ${_.album}`
+        var searchWordReal = _.artist ? `${_.artist} ${_.album}`: _.album
         var searchWord = encodeURIComponent(searchWordReal)
         _.cloudmusicLink = `https://music.163.com/#/search/m/?s=${searchWord}&type=1`
         var xW = encodeURIComponent(JSON.stringify({
           searchKey: searchWordReal
         }));
+        _.listeners = _.listeners || 0;
         _.xiamiLink = `https://www.xiami.com/list?scene=search&type=song&query=${xW}`
         return _;
       })
+      this.albums = _.shuffle(parsedAlbums);
     }
   }
 }
@@ -233,7 +360,7 @@ export default {
 }
 
 .page {
-  width: 85%;
+  /* width: 85%; */
   text-align: left;
 }
 .outlinks a {
@@ -278,6 +405,11 @@ position: absolute;
     width: 100%;
     height: 100%;
     /* z-index: -1; */
+}
+
+.filter-bar {
+  padding: 0 10px;
+  margin-bottom: 12px;
 }
 
 </style>

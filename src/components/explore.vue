@@ -14,6 +14,7 @@
       <div class="col-sm-6 feature-item">
             <h4 class="mt-4 mb-2">下载插件</h4>
             <p>
+              <a href="https://wpics.oss-cn-shanghai.aliyuncs.com/MusicHelper.zip" target="_blank">https://wpics.oss-cn-shanghai.aliyuncs.com/MusicHelper.zip</a><br>
               <a href="https://wpics.oss-cn-shanghai.aliyuncs.com/MusicHelper.zip" role="button" onclick="_hmt.push(['_trackEvent', 'download', 'internal', '0.0.4']);">下载安装包</a>,
               打开所在的文件夹，找到下载好的<code>MusicHelper.zip</code>文件解压
             </p>
@@ -25,12 +26,13 @@
             <h4 class="mt-4 mb-2">安装插件</h4>
             <p>
               在扩展中心打开右上角的【开发者模式】按钮，然后刷新页面，把解压后的<code>MusicHelper</code>文件夹【拖入扩展中心页面】
+              <nr>或点击左上角的【加载已解压的扩展程序】选择下载解压后的文件目录
             </p>
 
-            <b>安装完成后刷新页面</b>
-            <!-- <p>
-              还是不会？请看<a href="https://wpics.oss-cn-shanghai.aliyuncs.com/install.mp4" target="_blank" onclick="_hmt.push(['_trackEvent', 'install', 'turial', '0.0.4']);">安装视频教程</a>
-            </p> -->
+            <b>安装完成后刷新页面!</b>
+            <p>
+              还是不会？请看<a href="https://wpics.oss-cn-shanghai.aliyuncs.com/music/1604277490291288.mp4" target="_blank" onclick="_hmt.push(['_trackEvent', 'install', 'turial', '0.0.4']);">安装视频教程</a>
+            </p>
           </div>
     </div>
   </div>

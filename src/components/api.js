@@ -1,5 +1,5 @@
 
-export function httpGet(url, timeout = 5000) {
+export function httpGet(url, timeout = 15000) {
   return new Promise((resolve, reject) => {
     console.log("window.$_musichelper", url);
     window.$_musichelper.httpGet({ url: url }, function(error, data) {

@@ -129,7 +129,7 @@ h3,
 h4,
 h5,
 h6 {
-  color: #b3b3b3;
+  color: white;
 }
 
 h1,

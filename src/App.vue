@@ -87,7 +87,7 @@ export default {
 /* 滚动条滑块 */
 ::-webkit-scrollbar-thumb {
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.1);
+  background: #555;
   -webkit-box-shadow: inset006pxrgba(0, 0, 0, 0.5);
 }
 ::-webkit-scrollbar-thumb:window-inactive {

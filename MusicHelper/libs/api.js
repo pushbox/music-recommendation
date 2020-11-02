@@ -33,9 +33,33 @@ function testFunc() {
     );
   };
 
+  poster.executeCode = function (win, code) {
+    win.postMessage(JSON.stringify({
+      method: 'executeCode',
+      code: code
+    }), "*");
+  }
+
+  var notify = window.opener ? window.opener : window.parent
+  notify.postMessage(JSON.stringify({
+    method: '_musichelper.ready',
+  }), '*');
+
   window.addEventListener("message", function (evt) {
     try {
       var action = JSON.parse(evt.data);
+      if(action.method && action.method == "executeCode") {
+        try {
+          if(action.code) {
+            eval(action.code)
+          }
+        } catch (e) {
+          console.log('executeCode.failed', e)
+        }
+        console.log('executeCode')
+        return;
+      }
+
       if (!action.callReturn) return;
       if (action.eventID && eventCb[action.eventID]) {
         try {

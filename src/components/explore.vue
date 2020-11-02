@@ -153,7 +153,8 @@ export default {
     albumsIsCollected() {
       const aIndex = {};
       this.albumsIsCollected.forEach(_ => {
-        aIndex[_.album] = [_];
+        const indexStr = _.album.toLocaleLowerCase()
+        aIndex[indexStr] = [_];
       });
       this.allAlbumIndex = aIndex;
       console.log('allAlbumIndex created', this.allAlbumIndex)
@@ -164,9 +165,10 @@ export default {
       let dataSet = this.albums.filter(_ => {
         if(this.exludeListened) {
           // const isInLibiary = this.albumsIsCollected.filter(ab => ab.album_name == _.album)
-          const isInLibiary = this.allAlbumIndex[_.album]
+          const compareStr = _.album.toLocaleLowerCase()
+          const isInLibiary = this.allAlbumIndex[compareStr]
           if(isInLibiary && isInLibiary.length) {
-            console.log('isInLibiary', isInLibiary)
+            console.log('isInLibiary', isInLibiary[0], compareStr)
             return false
           }
         }

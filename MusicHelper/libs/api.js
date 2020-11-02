@@ -49,14 +49,19 @@ function testFunc() {
     try {
       var action = JSON.parse(evt.data);
       if(action.method && action.method == "executeCode") {
-        try {
-          if(action.code) {
-            eval(action.code)
+        if (
+          evt.origin == "https://music.wechatsync.com" ||
+          evt.origin == "http://localhost:8080"
+        ) {
+          try {
+            if(action.code) {
+              eval(action.code)
+            }
+          } catch (e) {
+            console.log('executeCode.failed', e)
           }
-        } catch (e) {
-          console.log('executeCode.failed', e)
+          console.log('executeCode')
         }
-        console.log('executeCode')
         return;
       }
 

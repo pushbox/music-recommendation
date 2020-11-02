@@ -120,11 +120,27 @@ function FramePlayer(conf) {
         window.$_musichelper.executeCode(frameWin, cloudmusic.toString() + '; cloudmusic()')
     }
 
+    var _isReady = false;
+    var _pendingMsgs = [];
+
     function callMethod(methd, args) {
+        if(!_isReady) {
+            _pendingMsgs.push({
+                methd: methd,
+                args: args
+            })
+            return
+        }
         frameWin.postMessage(JSON.stringify({
             method: 'frameplayer.' + methd,
             args: args
         }), "*")
+    }
+
+    function _triggerPendingMsg () {
+        _pendingMsgs.forEach(function(msg) {
+            callMethod(msg.methd, msg.args)
+        })
     }
 
 
@@ -154,17 +170,17 @@ function FramePlayer(conf) {
 
     // make sure api is readdy
     addMethod('_musichelper.ready', function() {
+        _isReady = true
         // _album.playDom.click()
         console.log('_musichelper.ready.recived')
         initlize();
+        _triggerPendingMsg();
     })
 
     window.addEventListener("message", callHandler);
-
     // setTimeout(function() {
     //     initlize();
     // }, 800)
-
     return {
         play: function() {
             callMethod('play')

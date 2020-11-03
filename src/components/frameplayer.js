@@ -100,10 +100,12 @@ function cloudmusic() {
         _album.playDom.click();
         setTimeout(function(){
             document.querySelector(".m-playbar").style.top = "";
-            document.querySelector("[data-action=lock]").click();
+            var lockDom = document
+              .querySelector(".m-playbar-unlock [data-action=lock]")
+            if(lockDom) lockDom.click();
             document.querySelector("[data-action=panel]").click();
             sendStatus();
-        }, 2000)
+        }, 1000)
     }
 
     // function play() {
@@ -151,8 +153,10 @@ function cloudmusic() {
         }
     }
 
+
     function sendStatus() {
         var status = {}
+        status.now = getNow();
         status.playList = getPlayList();
         sendMessage({
           method: "frameplayer.status",
@@ -160,6 +164,21 @@ function cloudmusic() {
         });
     }
 
+    function getNow() {
+        var playDom = document.querySelector(".m-playbar .play");
+        if(playDom) {
+            return {
+              song: playDom.querySelector(".name").innerText.trim(),
+              song_detail: document.querySelector(".m-playbar .head a").href,
+              artist: playDom.querySelector(".by a").innerText.trim(),
+              cover: document
+                .querySelector(".m-playbar .head img")
+                .getAttribute("src")
+                .split("?")[0],
+            };
+        }
+        return null
+    }
     function getPlayList() {
         var playlistNodes = document.querySelectorAll(".listbdc li");
         playlistNodes = Array.prototype.slice.call(playlistNodes);
@@ -178,14 +197,14 @@ function cloudmusic() {
     var _isStarted = false;
     window.onblur = function() {
         console.log("onfocus");
+        // var isPlayed = document.querySelector(".m-pbar .cur").offsetWidth > 1;
         if (!_isStarted) {
-            playAlbum();
-            // _album.playDom.click();
-            _isStarted = true;
-            setTimeout(function() {
-                
-                // sendStatus();
-            }, 300);
+          playAlbum();
+          // _album.playDom.click();
+          _isStarted = true;
+          setTimeout(function() {
+            // sendStatus();
+          }, 300);
         }
     }
 
@@ -219,7 +238,8 @@ function FramePlayer(conf) {
     var frameWidth = conf.width || 980;
     var frameHeight = conf.height || 348;
     var frameWin = window.open(conf.url, '', 'width='+frameWidth+',height='+frameHeight+',resizable=0');
-    window.frameWin = frameWin
+    // window.frameWin = frameWin
+    var _isClosed = false
 
     function initlize() {
         window.$_musichelper.executeCode(frameWin, cloudmusic.toString() + '; cloudmusic()')
@@ -246,6 +266,10 @@ function FramePlayer(conf) {
     }
 
     function callHandler(evt) {
+        if (_isClosed) {
+            window.removeEventListener("message", callHandler);
+            return
+        } 
         var action = JSON.parse(evt.data);
         if(hasMethod(action.method)) {
             try {
@@ -266,8 +290,8 @@ function FramePlayer(conf) {
 
 
      addMethod("frameplayer.status", function(data) {
-        console.log("frameplayer.status", data);
-       emit("playlist", data);
+      console.log("frameplayer.status", data);
+       emit("status", data);
      });
 
     window.addEventListener("message", callHandler);
@@ -316,6 +340,7 @@ function FramePlayer(conf) {
       },
       close: function() {
         frameWin.close();
+        _isClosed = true;
       },
       focus: function() {
         frameWin.focus();
@@ -325,6 +350,9 @@ function FramePlayer(conf) {
     };
 }
 
-var framep = new FramePlayer({
-    url: "https://music.163.com/#/search/m/?s=Steve%20Hackett%20Spectral%20Mornings&type=10"
-})
+// if (framep) framep.close();
+// var framep = new FramePlayer({
+//     url: "https://music.163.com/#/search/m/?s=Steve%20Hackett%20Spectral%20Mornings&type=10"
+// })
+
+export default FramePlayer;

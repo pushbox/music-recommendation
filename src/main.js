@@ -8,6 +8,14 @@ import router from "./router";
 // import "./theme.less"
 // import "ant-design-vue/dist/antd.less";
 
+import Antd from "ant-design-vue";
+// import App from "./App";
+// import "ant-design-vue/dist/antd.css";
+// Vue.config.productionTip = false;
+
+Vue.use(Antd);
+
+
 import layout from "ant-design-vue/lib/layout"; // 加载 JS
 Vue.use(layout);
 
@@ -30,6 +38,23 @@ Vue.use(radio);
 import checkbox from "ant-design-vue/lib/checkbox"; // 加载 JS
 Vue.use(checkbox);
 
+import Col from "ant-design-vue/lib/grid/Col"; // 加载 JS
+Vue.use(Col);
+
+import Row from "ant-design-vue/lib/grid/Row"; // 加载 JS
+Vue.use(Row);
+
+
+import list from "ant-design-vue/lib/list/Item"; // 加载 JS
+Vue.use(list);
+
+
+import Item from "ant-design-vue/lib/list/Item"; // 加载 JS
+Vue.use(Item.Meta);
+Vue.use(Item);
+
+import avatar from "ant-design-vue/lib/avatar"; // 加载 JS
+Vue.use(avatar);
 
 ;
 router.afterEach((to, from) => {

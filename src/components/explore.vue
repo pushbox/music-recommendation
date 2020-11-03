@@ -26,7 +26,7 @@
             <h4 class="mt-4 mb-2">安装插件</h4>
             <p>
               在扩展中心打开右上角的【开发者模式】按钮，然后刷新页面，把解压后的<code>MusicHelper</code>文件夹【拖入扩展中心页面】
-              <nr>或点击左上角的【加载已解压的扩展程序】选择下载解压后的文件目录
+              <br>或点击左上角的【加载已解压的扩展程序】选择下载解压后的文件目录
             </p>
 
             <b>安装完成后刷新页面!</b>
@@ -66,6 +66,9 @@
             </div>
           </div>
         </div>
+        <div class="playlink">
+           <a-icon type="play-circle" @click="playAlbum(album)" :style="{ fontSize: '38px', color: 'white' }" />
+        </div>
         <div class="image-content">
           <h3 class="album-title">{{ album.album }}</h3>
           <!-- <p> {{ album.album }} </p> -->
@@ -79,6 +82,7 @@
               <img src="@/assets/xiami.png" height="18"/>
             </a>
             </span>
+            <!-- <a-icon name="play" /> -->
           </p>
           <!-- <p>基于 {{ album.rec_by.album }} 推荐</p> -->
         </div>
@@ -208,6 +212,9 @@ export default {
     }
   },
   methods: {
+    playAlbum(album) {
+      window.$player.playAlbum(album.albumKeyword)
+    },
     async loadLocalData() {
       let isAlive = true
       try {
@@ -313,12 +320,13 @@ export default {
       const parsedAlbums = albums.map(_ => {
         _.cover = _.cover.replace('https://', '').replace('.webp', '')
         _.cover = `https://i1.wp.com/${_.cover}`
-        var searchWordReal = _.artist ? `${_.artist} ${_.album}`: _.album
+        var searchWordReal = _.artist ? `${_.album} ${_.artist}`: _.album
         var searchWord = encodeURIComponent(searchWordReal)
         _.cloudmusicLink = `https://music.163.com/#/search/m/?s=${searchWord}&type=1`
         var xW = encodeURIComponent(JSON.stringify({
           searchKey: searchWordReal
         }));
+        _.albumKeyword = searchWordReal
         _.listeners = _.listeners || 0;
         _.xiamiLink = `https://www.xiami.com/list?scene=search&type=song&query=${xW}`
         return _;
@@ -369,6 +377,27 @@ export default {
 }
 .outlinks a {
   margin-right: 7px;
+}
+
+.album-item  .playlink {
+  position: relative;
+  font: 0/0 a;
+  text-shadow: none;
+  color: transparent;
+  vertical-align: top;
+  display: inline-block;
+  min-width: 0;
+  text-align: left;
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  width: 48px;
+  height: 48px;
+  display: none;
+}
+
+.album-item:hover .playlink {
+   display: inline-block;
 }
 
 /* .album-item .cover-image {

@@ -18,7 +18,20 @@
           <a-icon @click="prev" type="step-backward" />
           <a-icon @click="togglePlay" :type="playerStatus.isPlaying ? 'pause-circle':'play-circle'" class="play-block" />
           <a-icon @click="next" type="step-forward" />
-          </div>
+        </div>
+        <div v-if="playerStatus.progress" style="margin-top: 5px">
+          <!-- {{ playerStatus.progress}} -->
+          <a-row type="flex" align="middle" >
+            <a-col :flex="1">
+              <div style="background: #535353;   flex: 1;   height: 4px;   width: 100%;">
+                <div :style="'background: #b3b3b3;  height: 4px; width:'+playerStatus.progress.percent+'%;'"></div>
+              </div>
+            </a-col>
+             <a-col>
+                <span style="margin-left: 10px">{{playerStatus.progress.now}} / {{playerStatus.progress.total}}</span>
+              </a-col>
+          </a-row>
+        </div>
       </a-col>
       <a-col style="text-align: center" :span="6">
         <a-drawer
@@ -113,7 +126,7 @@ export default {
               }
               return _;
             })
-            self.newPlayList = newPlayList
+            self.playList = newPlayList
             // self.$set(self.playList, albumIndex, {
             //   songs: status.playList
             // })
@@ -133,10 +146,13 @@ export default {
   methods: {
     playSong(name, albumItem) { 
       console.log('playSong', name)
-      if(albumItem.album == this.playList.searchKeyWord) {
+      if(albumItem.album == this.playerStatus.searchKeyWord) {
         this.frameplayer.playSong(name)
       } else {
-        console.log('need switch album');
+        console.log('need switch album', {
+          now: this.playerStatus.searchKeyWord,
+          need: albumItem.album
+        });
         this.frameplayer.playAlbum(albumItem.album)
         this.frameplayer.playSong(name)
       }
@@ -159,6 +175,10 @@ export default {
 </script>
 
 <style>
+
+.contro-bar {
+  text-align: center;
+}
 
 .playerbar {
     color: #666;

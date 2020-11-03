@@ -59,10 +59,11 @@
     </div>
     <ul>
       <li v-for="album in showAlbums" :key="album.cover" class="album-item">
+        <div style="position: relative;">
         <div class="image">
           <div class="cover-image">
               <div class="layout-image">
-              <img :src="album.cover" class="layout-image-image"/>
+              <img :src="album.cover" class="layout-image-image"  />
             </div>
           </div>
         </div>
@@ -86,9 +87,13 @@
           </p>
           <!-- <p>基于 {{ album.rec_by.album }} 推荐</p> -->
         </div>
+        </div>
+        <div class="context">
+          基于 <a :href="album.rec_by.detail" target="_blank">{{ album.rec_by.album }}</a> 推荐
+        </div>
       </li>
     </ul>
-    <div v-if="albums.length" style="padding: 10px">{{ showAlbums.length }}</div>
+    <div v-if="albums.length" style="padding: 0 10px 20px">{{ showAlbums.length }}张</div>
   </div>
 </div>
 </template>
@@ -340,14 +345,13 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 
-
 .album-item {
   margin-bottom: 15px;
   width: 250px;
   position: relative;
   text-shadow: 0 0 10px rgba(0,0,0,.7);
   color: #fff;
-  height: 250px;
+  /* height: 250px; */
 }
 
 .album-item .image-content{
@@ -417,18 +421,27 @@ position: absolute;
   margin-bottom: 5px;
 }
 
+.album-item .context {
+  background-color: #222;
+  color: #aaa;
+  padding: 10px 20px;
+}
+
 .album-item .desc {
   font-size: 12px;
   margin-bottom: 0;;
 }
 .layout-image {
-    position: relative;
+  position: relative;
+  padding-top: 100%;
 }
+
 .layout-image-image {
-    position: absolute;
-    top: 0;
-    width: 100%;
+  position: absolute;
+  top: 0;
+  width: 100%;
 }
+
 .album-item .cover-image:after {
     background-image: -webkit-gradient(linear,left top,left bottom,from(transparent),color-stop(70%,rgba(0,0,0,.35)),to(rgba(0,0,0,.7)));
     background-image: linear-gradient(180deg,transparent 0,rgba(0,0,0,.35) 70%,rgba(0,0,0,.7));

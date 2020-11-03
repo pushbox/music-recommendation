@@ -165,18 +165,47 @@ function cloudmusic() {
       });   
     }
 
+    function reportStatus() {
+      try {
+        sendStatus();
+      } catch (e) {}
+      setTimeout(reportStatus, 2 * 1000);
+    }
+
+    reportStatus();
+    
+    function makeSurePannelOpend() {
+      var playListContainer = document.querySelector('#g_playlist')
+      if(!playListContainer) {
+        document.querySelector("[data-action=panel]").click();
+      }
+    }
+
+    function playSong(songName) {
+      makeSurePannelOpend();
+      var nowList = getPlayList(true)
+      var listSongs = nowList.filter(_ => _.song == songName);
+      // searchAlbum(keyword);
+      console.log("frameplayer.playSong", listSongs, nowList);
+      if(listSongs.length) {
+        listSongs[0].dom.click();
+      }
+      sendStatus()
+    }
+
     function playAlbum() {
         if(!_album) {
           sendStatus();
           return;
         }
+        console.log('_album', _album)
         _album.playDom.click();
         setTimeout(function(){
             document.querySelector(".m-playbar").style.top = "";
             var lockDom = document
               .querySelector(".m-playbar-unlock [data-action=lock]")
             if(lockDom) lockDom.click();
-            document.querySelector("[data-action=panel]").click();
+            makeSurePannelOpend();
             sendStatus();
         }, 1000)
     }
@@ -245,27 +274,46 @@ function cloudmusic() {
       }
       return false;
     }
+
+    function getPlayerProgress() {
+      var progressDom = document.querySelector('.m-pbar .time')
+      if(progressDom) {
+        var valuePair = progressDom.innerText.split(" / ")
+        return {
+          percent: parseFloat(document.querySelector('.m-pbar .cur').style.width.replace("%", '')).toFixed(0),
+          now: valuePair[0],
+          total: valuePair[1]
+        }
+      }
+      return null
+    }
+
     function sendStatus(opt) {
-        opt = opt || {};
-        var status = {}
-        status.found_albums = _matchedAlbums.map(function(_) {
-          _.playDom = null
-          return _;
-        });
-        status.searchKeyWord = _searchKeyWord;
-        status.currentAlbum = _album ? {
-          album: _album.album,
-          artist: _album.artist,
-        } : null,
-        status.isPlaying = checkIsPlaying();
-        status.now = getNow();
-        status.playList = getPlayList();
-        console.log('sendStatus', status)
-        status = Object.assign(status, opt);
-        sendMessage({
-          method: "frameplayer.status",
-          args: status,
-        });
+      opt = opt || {};
+      var status = {}
+      makeSurePannelOpend();
+      status.found_albums = _matchedAlbums.map(function(_) {
+        return {
+          album: _.album,
+          artist: _.artist
+        };
+      });
+      status.searchKeyWord = _searchKeyWord;
+      status.currentAlbum = _album ? {
+        album: _album.album,
+        artist: _album.artist,
+      } : null,
+      status.isPlaying = checkIsPlaying();
+      status.now = getNow();
+      status.playList = getPlayList();
+      status.progress = getPlayerProgress();
+      console.log('sendStatus', status)
+      status = Object.assign(status, opt);
+      
+      sendMessage({
+        method: "frameplayer.status",
+        args: status,
+      });
     }
 
     function getNow() {
@@ -308,9 +356,14 @@ function cloudmusic() {
         console.log("onfocus");
         // var isPlayed = document.querySelector(".m-pbar .cur").offsetWidth > 1;
         if (!_isStarted) {
-          playAlbum();
+          try {
+            playAlbum();
+            _isStarted = true;
+          } catch(e) {
+            _isStarted = false;
+            console.log(e)
+          }
           // _album.playDom.click();
-          _isStarted = true;
           setTimeout(function() {
             // sendStatus();
           }, 300);
@@ -330,13 +383,7 @@ function cloudmusic() {
 
      addMethod("frameplayer.playSong", function(songName) {
       console.log("frameplayer.playSong", songName);
-      var listSongs = getPlayList(true).filter(_ => _.song == songName);
-      // searchAlbum(keyword);
-      console.log("frameplayer.playSong", listSongs);
-      if(listSongs.length) {
-        listSongs[0].dom.click();
-      }
-      sendStatus()
+      playSong(songName)
     });
 
     var actions = ['play', 'next', 'pause', 'prev'];
@@ -361,7 +408,7 @@ function FramePlayer(conf) {
     var _isClosed = false
 
     function initlize() {
-        window.$_musichelper.executeCode(frameWin, cloudmusic.toString() + '; cloudmusic()')
+      window.$_musichelper.executeCode(frameWin, cloudmusic.toString() + '; '+cloudmusic.name+'()')
     }
 
     function callMethod(methd, args) {

@@ -111,6 +111,7 @@ class Douban {
       rating: albumMeta.rating,
       tags: albumMeta.tags,
       attr: albumMeta.attrs,
+      detail: netPageUrl,
     };
     simliarAlbums = simliarAlbums.map((_) => {
       _.rec_by = currentAlbum;

@@ -48,6 +48,7 @@ class LastFM {
       artist: this.artist,
       listeners: $(".header-metadata-tnew-item--listeners abbr").attr("title"),
       plays: $(".header-metadata-tnew-item--scrobbles abbr").attr("title"),
+      detail: url,
       tags: $(".tags-list--global li a")
         .map(function() {
           return {

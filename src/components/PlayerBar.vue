@@ -107,6 +107,14 @@ export default {
             self.playerStatus = status
             if(status.tip) {
               self.$message.info(status.tip)
+              self.$notification.open({
+                  message: '提示',
+                  description:
+                    status.tip,
+                  onClick: () => {
+                    console.log('Notification Clicked!');
+                  },
+                });
             }
             var newPlayList = self.playList.map(_ => {
               if(_.album === status.searchKeyWord) {

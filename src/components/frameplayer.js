@@ -93,10 +93,15 @@ function cloudmusic() {
             return
         }
        
+        if(doc.querySelector(".u-load")) {
+          setTimeout(loop, 300);
+          return;
+        }
      
        if (tab) {
          var listNodes = tab.nextElementSibling.querySelectorAll("li");
          listNodes = Array.prototype.slice.call(listNodes);
+
          var listAlbums = listNodes
            .map((_) => {
              return {
@@ -125,10 +130,12 @@ function cloudmusic() {
          });
 
          if(matchedAlbums.length == 0) {
+           var hasArtist = searchKeyWord.split('  ').length > 1
           matchedAlbums = listAlbums.filter((_) => {
-            var str1 = _.album + ' ' +  _.artist;
+            var str1 = hasArtist ? _.album + ' ' +  _.artist : _.album;
             var sim = similar(searchKeyWord, str1);
-            if(parseFloat(sim) > 0.7) {
+            console.log('similar', str1, sim)
+            if(parseFloat(sim) > 0.5) {
               return true;
             }
             // var artInKeyword = searchKeyWord.indexOf(_.artist) > -1;
@@ -141,7 +148,7 @@ function cloudmusic() {
 
           
          }
-         console.log(listAlbums, matchedAlbums, "done");
+         console.log(listAlbums, matchedAlbums, "done", listNodes.length);
          _matchedAlbums = matchedAlbums;
          _listAlbums = listAlbums;
          if (matchedAlbums.length) {
@@ -192,6 +199,17 @@ function cloudmusic() {
       if(!playListContainer) {
         document.querySelector("[data-action=panel]").click();
       }
+    }
+
+    function isInAutoPlayPolicyError() {
+      var pauseButton = document.querySelector("[data-action=pause]")
+      if (pauseButton) {
+        var status = getPlayerProgress();
+        if(status && status.now === "00:00") {
+          return true;
+        }
+      }
+      return false
     }
 
     function playSong(songName) {
@@ -367,10 +385,12 @@ function cloudmusic() {
     var _isStarted = false;
 
     function initialStart() {
-      if (!_isStarted) {
+      if (!_isStarted && _album != null) {
         try {
           playAlbum();
           _isStarted = true;
+          console.log('initialStart')
+          // set
         } catch(e) {
           _isStarted = false;
           console.log(e)
@@ -381,6 +401,7 @@ function cloudmusic() {
     window.onblur = function() {
       initialStart();
     }
+    window.addEventListener('click', initialStart);
     window.addEventListener('mousemove', initialStart);
 
     addMethod('frameplayer.start', function() {

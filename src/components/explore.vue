@@ -333,7 +333,7 @@ export default {
       const parsedAlbums = albums.map(_ => {
         _.cover = _.cover.replace('https://', '').replace('.webp', '')
         _.cover = `https://i1.wp.com/${_.cover}`
-        var searchWordReal = _.artist ? `${_.album} ${_.artist}`: _.album
+        var searchWordReal = _.artist ? `${_.album}  ${_.artist}`: _.album
         var searchWord = encodeURIComponent(searchWordReal)
         _.cloudmusicLink = `https://music.163.com/#/search/m/?s=${searchWord}&type=1`
         var xW = encodeURIComponent(JSON.stringify({
@@ -412,12 +412,10 @@ export default {
    display: inline-block;
 }
 
-/* .album-item .cover-image {
-  position: relative;
-  z-index: -1;
-  display: block;
-  height: 250px;
-} */
+.album-item .cover-image {
+  overflow: hidden
+}
+
 .album-item .image img {
 position: absolute;
     top: 0;

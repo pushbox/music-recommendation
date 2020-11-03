@@ -5,6 +5,47 @@ function cloudmusic() {
     var _matchedAlbums = [];
     var _listAlbums =[]
     var _album = null
+    var _searchKeyWord = null
+    var _pengdingTaskCount = 0;
+
+    function similar(s, t, f) {
+      if (!s || !t) {
+          return 0
+      }
+      var l = s.length > t.length ? s.length : t.length
+      var n = s.length
+      var m = t.length
+      var d = []
+      f = f || 3
+      var min = function(a, b, c) {
+          return a < b ? (a < c ? a : c) : (b < c ? b : c)
+      }
+      var i, j, si, tj, cost
+      if (n === 0) return m
+      if (m === 0) return n
+      for (i = 0; i <= n; i++) {
+          d[i] = []
+          d[i][0] = i
+      }
+      for (j = 0; j <= m; j++) {
+          d[0][j] = j
+      }
+      for (i = 1; i <= n; i++) {
+          si = s.charAt(i - 1)
+          for (j = 1; j <= m; j++) {
+              tj = t.charAt(j - 1)
+              if (si === tj) {
+                  cost = 0
+              } else {
+                  cost = 1
+              }
+              d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost)
+          }
+      }
+      let res = (1 - d[n][m] / l)
+      return res.toFixed(f)
+  }
+   
 
     function removeBlankToSpace(str) {
         if(str == null) return str
@@ -60,6 +101,7 @@ function cloudmusic() {
            });
 
          var searchKeyWord = doc.querySelector("#m-search-input").value;
+         _searchKeyWord = searchKeyWord
          var matchedAlbums = listAlbums.filter((_) => {
            var artInKeyword = searchKeyWord.indexOf(_.artist) > -1;
            var albInKeyword = searchKeyWord.indexOf(_.album) > -1;
@@ -68,19 +110,38 @@ function cloudmusic() {
            }
            return false;
          });
+
+         if(matchedAlbums.length == 0) {
+          matchedAlbums = listAlbums.filter((_) => {
+            var str1 = _.album + ' ' +  _.artist;
+            var sim = similar(searchKeyWord, str1);
+            if(parseFloat(sim) > 0.7) {
+              return true;
+            }
+            // var artInKeyword = searchKeyWord.indexOf(_.artist) > -1;
+            // var albInKeyword = searchKeyWord.indexOf(_.album) > -1;
+            // if (artInKeyword && albInKeyword) {
+            //   return true;
+            // }
+            return false;
+          });
+
+          
+         }
          console.log(listAlbums, matchedAlbums, "done");
          _matchedAlbums = matchedAlbums;
          _listAlbums = listAlbums;
          if (matchedAlbums.length) {
            _album = matchedAlbums[0];
-           if(cb) {
-               cb();
-           }
          }
-         sendMessage({
-           method: "frameplayer.found",
-           count: matchedAlbums.length,
-         });
+
+        if(cb) {
+          cb();
+        }
+        //  sendMessage({
+        //    method: "frameplayer.found",
+        //    count: matchedAlbums.length,
+        //  });
          // window.parent()
          return;
        }
@@ -90,13 +151,25 @@ function cloudmusic() {
    findAndChoose();
 
     function searchAlbum(keyword) {
+      _pengdingTaskCount += 1;
     //   doc.querySelector("#m-search-input").value = keyword;
       findAndChoose(keyword, function() {
-        playAlbum();
+        _pengdingTaskCount -= 1;
+        if(_matchedAlbums.length) {
+          playAlbum();
+        } else {
+          sendStatus({
+            tip: '没有找到专辑'
+          });
+        }
       });   
     }
 
     function playAlbum() {
+        if(!_album) {
+          sendStatus();
+          return;
+        }
         _album.playDom.click();
         setTimeout(function(){
             document.querySelector(".m-playbar").style.top = "";
@@ -122,7 +195,19 @@ function cloudmusic() {
     }
 
     function executeMethod(name, args) {
+      // make sure task done
+      if(_pengdingTaskCount == 0) {
         _methods[name](args)
+      } else {
+        (function wait() {
+          console.log('wait', _pengdingTaskCount)
+          if(_pengdingTaskCount == 0) {
+            _methods[name](args)
+            return;
+          }
+          setTimeout(wait, 500);
+        })();
+      }
     }
 
     function callHandler(evt) {
@@ -153,11 +238,30 @@ function cloudmusic() {
         }
     }
 
-
-    function sendStatus() {
+    function checkIsPlaying() {
+      var dom = document.querySelector(_selectors.pause);
+      if(dom) {
+        return true;
+      }
+      return false;
+    }
+    function sendStatus(opt) {
+        opt = opt || {};
         var status = {}
+        status.found_albums = _matchedAlbums.map(function(_) {
+          _.playDom = null
+          return _;
+        });
+        status.searchKeyWord = _searchKeyWord;
+        status.currentAlbum = _album ? {
+          album: _album.album,
+          artist: _album.artist,
+        } : null,
+        status.isPlaying = checkIsPlaying();
         status.now = getNow();
         status.playList = getPlayList();
+        console.log('sendStatus', status)
+        status = Object.assign(status, opt);
         sendMessage({
           method: "frameplayer.status",
           args: status,
@@ -179,17 +283,22 @@ function cloudmusic() {
         }
         return null
     }
-    function getPlayList() {
+    function getPlayList(withDom) {
+      withDom = withDom || false
         var playlistNodes = document.querySelectorAll(".listbdc li");
         playlistNodes = Array.prototype.slice.call(playlistNodes);
         var list = playlistNodes.map((_) => {
-            return {
+            var item = {
                 song: _.querySelector(".col-2").innerText.trim(),
                 time: _.querySelector(".col-5").innerText.trim(),
                 artist: _.querySelector(".col-4").innerText.trim(),
                 isPlay: _.querySelector(".playicn") == null ? false : true,
                 //   song: _.querySelector("[data-res-action=play]"),
             };
+            if(withDom) {
+              item.dom = _;
+            }
+            return item;;
          });
         return list;;
     }
@@ -218,7 +327,17 @@ function cloudmusic() {
        searchAlbum(keyword);
      });
 
-    ;
+
+     addMethod("frameplayer.playSong", function(songName) {
+      console.log("frameplayer.playSong", songName);
+      var listSongs = getPlayList(true).filter(_ => _.song == songName);
+      // searchAlbum(keyword);
+      console.log("frameplayer.playSong", listSongs);
+      if(listSongs.length) {
+        listSongs[0].dom.click();
+      }
+      sendStatus()
+    });
 
     var actions = ['play', 'next', 'pause', 'prev'];
     actions.forEach(function(actionType) {
@@ -237,7 +356,7 @@ function FramePlayer(conf) {
     conf = conf || {};
     var frameWidth = conf.width || 980;
     var frameHeight = conf.height || 348;
-    var frameWin = window.open(conf.url, '', 'width='+frameWidth+',height='+frameHeight+',resizable=0');
+    var frameWin = window.open(conf.url, '', 'width='+frameWidth+',height='+frameHeight+',resizable=0,left=300,top=300');
     // window.frameWin = frameWin
     var _isClosed = false
 
@@ -320,6 +439,9 @@ function FramePlayer(conf) {
         playAlbum: function(keyword) {
             callMethod("playAlbum", keyword);
         }, 
+        playSong: function(name) {
+          callMethod("playSong", name);
+      }, 
       start: function() {
         callMethod("start");
       },

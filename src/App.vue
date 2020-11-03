@@ -43,7 +43,7 @@
           </a-menu-item>
         </a-menu>
       </a-layout-sider>
-      <a-layout style="height:88vh; overflow-y:scroll">
+      <a-layout style="height:calc(100vh - 90px); overflow-y:scroll">
         <a-layout-content :style="{ margin: '20px 16px', minHeight: '280px' }">
           <a-row>
             <router-view></router-view>
@@ -51,7 +51,7 @@
         </a-layout-content>
       </a-layout>
      </a-layout>
-      <a-layout-footer style="background-color: #181818; height:12vh;">
+      <a-layout-footer style="background-color: #181818; height: 90px; padding: 0px 16px;">
         <!-- Ant Design ©2018 Created by Ant UED -->
         <PlayerBar />
       </a-layout-footer>

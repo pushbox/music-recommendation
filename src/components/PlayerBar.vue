@@ -1,21 +1,48 @@
 <template>
-  <a-row class="playerbar">
+  <a-row class="playerbar" type="flex" align="middle" v-if="playerStatus">
        <a-col :span="8">
         <!-- col-8 -->
         <!-- {{ playerStatus }} -->
         <a-list-item-meta :description="playerStatus.now.artist" v-if="playerStatus">
-          <a slot="title">{{ playerStatus.now.song }}</a>
-          <a-avatar
+          <a slot="title" target="_blank" :href="playerStatus.now.song_detail">{{ playerStatus.now.song }}</a>
+          <img
             slot="avatar"
             :src="playerStatus.now.cover"
+            height="55"
           />
         </a-list-item-meta>
       </a-col>
       <a-col :span="10">
         <!-- col-8 -->
-        <a-icon @click="prev" type="step-backward" :style="{ fontSize: '38px', color: 'white' }"/>
-        <a-icon @click="next" type="play-circle" :style="{ fontSize: '38px', color: 'white', margin: '0 25px' }" />
-        <a-icon @click="next" type="step-forward"  :style="{ fontSize: '38px', color: 'white' }"/>
+        <div class="contro-bar">
+          <a-icon @click="prev" type="step-backward" />
+          <a-icon @click="togglePlay" :type="playerStatus.isPlaying ? 'pause-circle':'play-circle'" class="play-block" />
+          <a-icon @click="next" type="step-forward" />
+          </div>
+      </a-col>
+      <a-col style="text-align: center" :span="6">
+        <a-drawer
+          title="播放列表"
+          placement="right"
+          class="playlist-items"
+          :closable="false"
+          width="380"
+          :visible="visible"
+          :bodyStyle="{padding:'0'}"
+          @close="visible = false"
+        >
+        <!-- {{ playList.length }} -->
+          <template v-for="album in playList">
+            <a-list-item v-for="song in album.songs" :key="song.song" :class="{inplay: song.isPlaying}" @click="playSong(song.song, album)">
+              <a-list-item-meta :description="song.artist">
+                <a slot="title" target="_blank">{{ song.song }}</a>
+              </a-list-item-meta>
+              <span slot="actions">{{ song.time }}</span>
+            </a-list-item>
+          </template>
+        </a-drawer>
+        <!-- {{ playList.length }} -->
+         <a-icon @click="visible = true" type="menu" />
       </a-col>
   </a-row>
 </template>
@@ -28,8 +55,10 @@ export default {
   data() {
     return {
       data: [],
+      visible: false,
       frameplayer: null,
-      playerStatus: null
+      playerStatus: null,
+      playList: [],
     };
   },
   name: "landing-page",
@@ -37,60 +66,129 @@ export default {
   watch: {},
   methods: {},
   mounted() {
-      var self = this
+    var self = this
+
+    window.addEventListener('beforeunload', (event) => {
+      if(self.frameplayer) {
+        self.frameplayer.close()
+      }
+    });
     window.$player = {
       playAlbum(keyword, type) {
+        var isIn = self.playList.filter(_ => _.album == keyword)
+        if(isIn.length == 0) {
+          self.playList.push({
+            album: keyword,
+            songs: []
+          })
+        }
+        
         if(self.frameplayer == null) {
-            keyword = encodeURIComponent(keyword)
-            const url =`https://music.163.com/#/search/m/?s=${keyword}&type=10`;
-            self.frameplayer = new FramePlayer({
-                url: url
+          keyword = encodeURIComponent(keyword)
+          const url =`https://music.163.com/#/search/m/?s=${keyword}&type=10`;
+          self.frameplayer = new FramePlayer({
+              url: url
+          })
+          self.frameplayer.on('status', (status) => {
+            console.log('frameplayer', this, status)
+            self.playerStatus = status
+            if(status.tip) {
+              self.$message.info(status.tip)
+            }
+            var newPlayList = self.playList.map(_ => {
+              if(_.album === status.searchKeyWord) {
+                _.songs = status.playList.map(songItem => {
+                  if(status.now && songItem.song == status.now.song) {
+                    songItem.isPlaying = true
+                  } else {
+                    songItem.isPlaying = false
+                  }
+                  return songItem
+                })
+              } else {
+                _.songs = _.songs.map(songItem => {
+                  songItem.isPlaying = false
+                  return songItem
+                })
+              }
+              return _;
             })
-            self.frameplayer.on('status', (status) => {
-                console.log('frameplayer', this, status)
-                self.playerStatus = status
-            })
+            self.newPlayList = newPlayList
+            // self.$set(self.playList, albumIndex, {
+            //   songs: status.playList
+            // })
+          })
+
         } else {
-            self.frameplayer.playAlbum(keyword)
+          self.frameplayer.playAlbum(keyword)
         }
       }
     }
   },
+  beforeDestroy() {
+    if(this.frameplayer) {
+      this.frameplayer.close()
+    }
+  },
   methods: {
-      next() {
-          this.frameplayer.next()
-      },
-      prev() {
-          this.frameplayer.prev()
-      },
+    playSong(name, albumItem) { 
+      console.log('playSong', name)
+      if(albumItem.album == this.playList.searchKeyWord) {
+        this.frameplayer.playSong(name)
+      } else {
+        console.log('need switch album');
+        this.frameplayer.playAlbum(albumItem.album)
+        this.frameplayer.playSong(name)
+      }
+    },
+    togglePlay() {
+      if(this.playerStatus.isPlaying) {
+        this.frameplayer.pause()
+      } else {
+        this.frameplayer.play()
+      }
+    },
+    next() {
+        this.frameplayer.next()
+    },
+    prev() {
+        this.frameplayer.prev()
+    },
   }
 };
 </script>
 
 <style>
-@import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro");
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: "Source Sans Pro", sans-serif;
-}
-
-#wrapper {
-  height: 100vh;
-  /* padding: 60px 80px; */
-  width: 100vw;
-  text-align: center;
-}
-
-.about-page p {
-  margin-bottom: 5px;
-}
 .playerbar {
-    color: #666
+    color: #666;
+    padding: 15px 0;
+}
+
+.playerbar .anticon {
+  font-size: 25px;
+  color: #b3b3b3
+}
+
+.playerbar .anticon:hover {
+  color: white
+}
+
+.play-block {
+  margin: 0 35px;
+}
+.playerbar .anticon.play-block {
+  font-size: 28px
+}
+.playlist-items .ant-list-item {
+  margin: 0;
+  padding: 10px;
+}
+
+.playlist-items .ant-list-item:hover,
+.playlist-items .ant-list-item.inplay {
+  cursor: pointer;
+  /* padding: 8px 10px; */
+ background: #333;
 }
 </style>

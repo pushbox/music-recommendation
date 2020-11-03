@@ -1,5 +1,7 @@
 
 
+
+
 function cloudmusic() {
     console.log('start')
     var _matchedAlbums = [];
@@ -7,6 +9,17 @@ function cloudmusic() {
     var _album = null
     var _searchKeyWord = null
     var _pengdingTaskCount = 0;
+
+    function createLayer() {
+      var div = document.createElement('div');
+      div.setAttribute('style', 'height: 100%;  width: 100%;  position: fixed;z-index: 888888; top: 0; cursor: pointer;');
+      div.addEventListener('click', function(evt) {
+        alert('请从外部控制')
+        evt.stopPropagation();
+        return false
+      })
+      document.body.appendChild(div);
+    }
 
     function similar(s, t, f) {
       if (!s || !t) {

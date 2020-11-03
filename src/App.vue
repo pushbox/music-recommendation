@@ -3,8 +3,9 @@
     <!-- <router-view></router-view> -->
     <a-layout
       id="components-layout-demo-custom-trigger"
-      :style="{ 'min-height': '100vh' }"
+      
     >
+     <a-layout>
       <a-layout-sider :trigger="null" collapsible>
         <div class="logo">
           <img src="@/assets/logo.png" height="50" />
@@ -42,18 +43,27 @@
           </a-menu-item>
         </a-menu>
       </a-layout-sider>
-      <a-layout style="height:100vh; overflow-y:scroll">
+      <a-layout style="height:88vh; overflow-y:scroll">
         <a-layout-content :style="{ margin: '20px 16px', minHeight: '280px' }">
           <a-row>
             <router-view></router-view>
           </a-row>
         </a-layout-content>
       </a-layout>
+     </a-layout>
+      <a-layout-footer style="background-color: #181818; height:12vh;">
+        <!-- Ant Design ©2018 Created by Ant UED -->
+        <PlayerBar />
+      </a-layout-footer>
     </a-layout>
   </div>
 </template>
 
 <script>
+
+import PlayerBar from './components/PlayerBar'
+
+
 export default {
   name: "music-exporter",
   data() {
@@ -61,11 +71,15 @@ export default {
       selectedKeys: [this.$route.path]
     };
   },
+  components: {
+    PlayerBar
+  },
   watch: {
     $route() {
       this.selectedKeys = [this.$route.path];
     }
-  }
+  },
+
 };
 </script>
 

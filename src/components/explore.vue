@@ -253,6 +253,9 @@ export default {
       // console.log('loadLocalData', data)
     },
     async recom(force = false) {
+      try {
+        _hmt && _hmt.push(['_trackEvent', 'explre', 'recom', 'init']);
+      } catch (e) {}
       const recentDocId = 'recent';
       let cacheDoc = null
       try {
@@ -311,7 +314,9 @@ export default {
       } else {
         rencetSongs = cacheDoc.songs
       }
-      
+      try {
+        _hmt && _hmt.push(['_trackEvent', 'explre', 'rencentSongs', rencetSongs.length]);
+      } catch (e) {}
       // const xiami = await getXiamiCollect();
       // const songs = await getCloudMusicCollect();
       // const recent = songs.splice(0, 40)
@@ -321,6 +326,9 @@ export default {
       const albums = await getAlbums(rencetSongs, {
         // force: true
       })
+      try {
+        _hmt && _hmt.push(['_trackEvent', 'explre', 'getAlbums', albums.length]);
+      } catch (e) {}
       this.fetchSimliar = false
       const parsedAlbums = albums.map(_ => {
         _.cover = _.cover.replace('https://', '').replace('.webp', '')

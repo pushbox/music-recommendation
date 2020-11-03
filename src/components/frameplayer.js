@@ -352,23 +352,23 @@ function cloudmusic() {
     }
 
     var _isStarted = false;
-    window.onblur = function() {
-        console.log("onfocus");
-        // var isPlayed = document.querySelector(".m-pbar .cur").offsetWidth > 1;
-        if (!_isStarted) {
-          try {
-            playAlbum();
-            _isStarted = true;
-          } catch(e) {
-            _isStarted = false;
-            console.log(e)
-          }
-          // _album.playDom.click();
-          setTimeout(function() {
-            // sendStatus();
-          }, 300);
+
+    function initialStart() {
+      if (!_isStarted) {
+        try {
+          playAlbum();
+          _isStarted = true;
+        } catch(e) {
+          _isStarted = false;
+          console.log(e)
         }
+      }
     }
+
+    window.onblur = function() {
+      initialStart();
+    }
+    window.addEventListener('mousemove', initialStart);
 
     addMethod('frameplayer.start', function() {
         console.log("frameplayer.start");
@@ -478,16 +478,19 @@ function FramePlayer(conf) {
             } catch(e) {}
         }
     }
-
-    // setTimeout(function() {
-    //     initlize();
-    // }, 800)
+    
     return {
         playAlbum: function(keyword) {
-            callMethod("playAlbum", keyword);
+          callMethod("playAlbum", keyword);
+          try {
+            _hmt && _hmt.push(['_trackEvent', 'player', 'playAlbum', keyword]);
+          } catch (e) {}
         }, 
         playSong: function(name) {
           callMethod("playSong", name);
+          try {
+            _hmt && _hmt.push(['_trackEvent', 'player', 'playSong', keyword]);
+          } catch (e) {}
       }, 
       start: function() {
         callMethod("start");

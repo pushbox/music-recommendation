@@ -5,6 +5,7 @@
     <h2 class="page-title">未找到收藏歌曲</h2>
     <div class="page-content">
       <p>请登陆你的<a href="https://music.163.com/" target="_blank">网易云音乐</a>，<a href="https://www.xiami.com/" target="_blank">虾米音乐</a>账号</p>
+      <p>登陆后请刷新本页！</p>
     </div>
   </div>
   <div class="page" v-if="!extensionInstalled">
@@ -51,12 +52,12 @@
        </div>
     </div>
     <div class="filter-bar" v-if="!fetchSimliar && !isScaning">
-      <a-radio-group :options="sortOptions" v-model="sortByType" style="margin-right: 30px"/>
+      <a-radio-group :options="sortOptions" v-model="sortByType" style="margin-right: 10px"/>
       <a-checkbox v-model="exludeListened">
             排除听过的
       </a-checkbox>
-      <a-radio-group :options="sourceOptions" v-model="bySource" style="margin-right: 30px"/>
-      <a-button type="primary" @click="visible = true">自定义</a-button>
+      <a-radio-group :options="sourceOptions" v-model="bySource" style="margin-right: 10px"/>
+      <a-button type="primary" @click="visible = true" icon="edit">自定义</a-button>
       <a-modal v-model="visible" width="65%" title="自定义最近听过的歌曲列表" @ok="createCustom">
         <div class="form">
           <div>
@@ -76,8 +77,9 @@ Second Spasm	Gryphon	Red Queen to Gryphon Three
         </div>
       </a-modal>
     </div>
-    <ul>
-      <li v-for="album in showAlbums" :key="album.cover" class="album-item">
+
+    <ul v-if="fetchSimliar && currentFound">
+      <li v-for="album in currentFound.items" :key="album.cover" class="album-item">
         <div style="position: relative;">
         <div class="image">
           <div class="cover-image">
@@ -108,7 +110,54 @@ Second Spasm	Gryphon	Red Queen to Gryphon Three
         </div>
         </div>
         <div class="context">
-          基于 <a :href="album.rec_by.detail" target="_blank">{{ album.rec_by.album }}</a> 推荐
+          基于 <a-tooltip>
+    <template slot="title">
+      {{ album.rec_by.album }}
+    </template>
+    <a :href="album.rec_by.detail" :title="album.rec_by.album " target="_blank">{{ album.rec_by.album }}</a>
+  </a-tooltip> 推荐
+        </div>
+      </li>
+    </ul>
+
+    <ul>
+      <li v-for="(album) in showAlbums" :key="album.cover"  class="album-item">
+        <div style="position: relative;">
+        <div class="image">
+          <div class="cover-image">
+              <div class="layout-image">
+              <img v-lazy="album.cover" class="layout-image-image"  />
+            </div>
+          </div>
+        </div>
+        <div class="playlink">
+           <a-icon type="play-circle" @click="playAlbum(album)" :style="{ fontSize: '38px', color: 'white' }" />
+        </div>
+        <div class="image-content">
+          <h3 class="album-title">{{ album.album }}</h3>
+          <!-- <p> {{ album.album }} </p> -->
+          <p class="desc">
+            <template v-if="album.artist">{{ album.artist }}<br></template>
+            <template v-if="album.listeners">{{ album.listeners }} 人听过<br></template>
+            <span class="outlinks" style="margin-top:10px; display: inline-block;"><a :href="album.cloudmusicLink" target="_blank">
+              <img src="@/assets/163.png" height="18"/>
+            </a>
+            <a :href="album.xiamiLink" target="_blank">
+              <img src="@/assets/xiami.png" height="18"/>
+            </a>
+            </span>
+            <!-- <a-icon name="play" /> -->
+          </p>
+          <!-- <p>基于 {{ album.rec_by.album }} 推荐</p> -->
+        </div>
+        </div>
+        <div class="context">
+          基于 <a-tooltip>
+    <template slot="title">
+      {{ album.rec_by.album }}
+    </template>
+    <a :href="album.rec_by.detail" :title="album.rec_by.album " target="_blank">{{ album.rec_by.album }}</a>
+  </a-tooltip> 推荐
         </div>
       </li>
     </ul>
@@ -121,6 +170,7 @@ Second Spasm	Gryphon	Red Queen to Gryphon Three
 <script>
 import { getAlbumsByRecId, getAlbums, getCloudMusicCollect, getXiamiCollect } from './helper'
 import axios from 'axios'
+import { getResizeImage } from './api'
 
 const api = axios.create({
   baseURL: "http://localhost:8956",
@@ -147,6 +197,7 @@ export default {
       albumsIsCollected: [],
       fetchSimliar: false,
       allAlbumIndex: {},
+      currentFound: null,
       sortByType: 'rec',
       bySource: 'all',
       sourceOptions: [
@@ -252,18 +303,24 @@ export default {
       }
     },
     processShowData(albums) {
-      return albums.map(_ => {
-        _.cover = _.cover.replace('https://', '').replace('.webp', '')
-        _.cover = `https://i1.wp.com/${_.cover}`
-        var searchWordReal = _.artist ? `${_.album}  ${_.artist}`: _.album
-        var searchWord = encodeURIComponent(searchWordReal)
-        _.cloudmusicLink = `https://music.163.com/#/search/m/?s=${searchWord}&type=1`
-        var xW = encodeURIComponent(JSON.stringify({
-          searchKey: searchWordReal
-        }));
-        _.albumKeyword = searchWordReal
-        _.listeners = _.listeners || 0;
-        _.xiamiLink = `https://www.xiami.com/list?scene=search&type=song&query=${xW}`
+      return albums.map(source => {
+        let _ = { ... source };
+        if(_.cover.indexOf('wp.com') < 0) {
+          _.cover = _.cover.replace('https://', '').replace('.webp', '')
+          _.cover = getResizeImage(_.cover)
+        }
+        if(!_.cloudmusicLink) {
+          var searchWordReal = _.artist ? `${_.album}  ${_.artist}`: _.album
+          var searchWord = encodeURIComponent(searchWordReal)
+          _.cloudmusicLink = `https://music.163.com/#/search/m/?s=${searchWord}&type=1`
+          var xW = encodeURIComponent(JSON.stringify({
+            searchKey: searchWordReal
+          }));
+          _.albumKeyword = searchWordReal
+          _.listeners = _.listeners || 0;
+          _.xiamiLink = `https://www.xiami.com/list?scene=search&type=song&query=${xW}`
+
+        }
         return _;
       })
     },
@@ -422,8 +479,15 @@ export default {
       // rencetSongs = rencetSongs.slice(0, 50)
       console.log('recBySongs', recBySongs)
       this.fetchSimliar = true
+      var self = this
       const recoResult = await getAlbums(recBySongs, {
-        type: type
+        type: type,
+        progress: function(data) {
+          var newData = JSON.parse(JSON.stringify(data));
+          data.items = self.processShowData(data.items)
+          self.currentFound = data
+          console.log('progress.data', data)
+        }
         // force: true
       })
 
@@ -432,20 +496,7 @@ export default {
         _hmt && _hmt.push(['_trackEvent', 'explre', 'getAlbums', albums.length]);
       } catch (e) {}
       this.fetchSimliar = false
-      const parsedAlbums = albums.map(_ => {
-        _.cover = _.cover.replace('https://', '').replace('.webp', '')
-        _.cover = `https://i1.wp.com/${_.cover}`
-        var searchWordReal = _.artist ? `${_.album}  ${_.artist}`: _.album
-        var searchWord = encodeURIComponent(searchWordReal)
-        _.cloudmusicLink = `https://music.163.com/#/search/m/?s=${searchWord}&type=1`
-        var xW = encodeURIComponent(JSON.stringify({
-          searchKey: searchWordReal
-        }));
-        _.albumKeyword = searchWordReal
-        _.listeners = _.listeners || 0;
-        _.xiamiLink = `https://www.xiami.com/list?scene=search&type=song&query=${xW}`
-        return _;
-      })
+      const parsedAlbums = this.processShowData(albums)
       this.albums = _.shuffle(parsedAlbums);
       return recoResult
     }
@@ -534,6 +585,9 @@ position: absolute;
   background-color: #222;
   color: #aaa;
   padding: 10px 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .album-item .desc {

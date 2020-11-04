@@ -12,7 +12,9 @@ import Antd from "ant-design-vue";
 // import App from "./App";
 // import "ant-design-vue/dist/antd.css";
 // Vue.config.productionTip = false;
+import VueLazyload from 'vue-lazyload'
 
+Vue.use(VueLazyload)
 Vue.use(Antd);
 
 

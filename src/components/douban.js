@@ -1,6 +1,8 @@
 const cheerio = require("cheerio");
 const { httpGet, removeBlankToSpace } = require("./api");
 
+let _doubanlocked = null;
+
 class Douban {
   constructor(_artist, _album) {
     this.artist = _artist;
@@ -25,10 +27,23 @@ class Douban {
   }
 
   async extractPageData(url) {
+    if(_doubanlocked != null) {
+      const timeLeft = Date.now() - _doubanlocked;
+      if(timeLeft < (1000 * 300)) {
+        return {
+          simliarAlbums: []
+        }
+      }
+    }
     const apiURL =
       "https://api.douban.com/v2/music/search?q=" +
       encodeURIComponent(`${this.artist} ${this.album}`);
     const searchReult = await httpGet(apiURL);
+    if(searchReult.code && searchReult.code === 112) {
+      _doubanlocked = Date.now();
+      console.log('_doubanlocked', _doubanlocked)
+      return true;
+    }
 
     function safeCompare(v1, v2) {
       return (

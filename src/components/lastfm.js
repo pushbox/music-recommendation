@@ -29,7 +29,7 @@ class LastFM {
   async extractPageData(url) {
     const pageHtml = await httpGet(url);
     const $ = cheerio.load(pageHtml);
-    const simDoms = $(".similar-albums-item-wrap");
+    const simDoms = $(".similar-albums--with-12 .similar-albums-item-wrap");
     let simliarAlbums = [];
     for (let index = 0; index < simDoms.length; index++) {
       const simDom = simDoms.eq(index);
@@ -49,6 +49,23 @@ class LastFM {
       listeners: $(".header-metadata-tnew-item--listeners abbr").attr("title"),
       plays: $(".header-metadata-tnew-item--scrobbles abbr").attr("title"),
       detail: url,
+      simliar_artists: $('.catalogue-overview-similar-artists-item').map(function() {
+        return {
+          avatar: $(this).find('.avatar img').attr('src'),
+          link: $(this).find('.catalogue-overview-similar-artists-item-name a').attr('href'),
+          name: $(this).find('.catalogue-overview-similar-artists-item-name a').text(),
+          listeners: $(this).find('.catalogue-overview-similar-artists-item-listeners').length ? parseInt($(this).find('.catalogue-overview-similar-artists-item-listeners').text()
+          .replace(" listeners", "")
+          .replace(new RegExp(",", "g"), "")) : 0,
+        };
+      }).get(),
+      artist_avatar: $('.about-artist-images a.gallery-preview-image.gallery-preview-image--0 img').attr('src'),
+      artist_tags: $('.about-artist-tags li a').map(function() {
+        return {
+          name: $(this).text(),
+        };
+      })
+      .get(),
       tags: $(".tags-list--global li a")
         .map(function() {
           return {

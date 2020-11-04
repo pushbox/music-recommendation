@@ -93,11 +93,15 @@ async function getSimliarAlbumsByPlatform(type, topAlbums, conCount, progressLis
         }
       });
       if(progressListenner) {
-        progressListenner({
-          items: [].concat(results[0], results[1]),
-          total: totalAlbums,
-          type: type,
-        });
+        try {
+          progressListenner({
+            items: [].concat(results[0], results[1]),
+            total: totalAlbums,
+            type: type,
+          });
+        } catch (e) {
+          console.log('call error', e, results)
+        }
       }
       console.log('results', results, stepAlbums)
     } catch (e) {

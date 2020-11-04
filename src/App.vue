@@ -150,11 +150,18 @@ h1,
 h2 {
   font-weight: normal;
 }
+
 ul {
   list-style-type: none;
   padding: 0;
 }
-li {
+
+.ant-card-body ul {
+  list-style-type: disc;
+  padding: 0 0 0 28px;
+}
+
+li.album-item {
   display: inline-block;
   margin: 0 10px;
 }

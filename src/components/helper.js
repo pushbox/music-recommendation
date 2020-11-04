@@ -276,6 +276,8 @@ async function getSimliarAlbumsByPlatform(type, topAlbums, conCount) {
     "getSimliarAlbumsByPlatform",
     type, conCount
   );
+
+  let sucessCount = 0;
   for (let index = 0; index < stepItems.length; index++) {
     const stepAlbums = stepItems[index];
     try {
@@ -291,6 +293,7 @@ async function getSimliarAlbumsByPlatform(type, topAlbums, conCount) {
       // }
       results.forEach((_) => {
         if (_.length) {
+          sucessCount++;
           totalAlbums = totalAlbums.concat(_);
         }
       });
@@ -299,6 +302,8 @@ async function getSimliarAlbumsByPlatform(type, topAlbums, conCount) {
     }
     console.log("step", index, "done", stepItems.length, stepAlbums);
   }
+
+  console.log("getSimliarAlbumsByPlatform", type, "done", topAlbums.length, 'sucessCount', sucessCount);
   return totalAlbums;
 }
 
@@ -337,6 +342,15 @@ const chunk = (arr, size) =>
     arr.slice(i * size, i * size + size)
   );
 
+
+export async function getAlbumsByRecId(docId) {
+  let caceDoc = null;
+  try {
+    caceDoc = await dailyDb.get(docId);
+  } catch (e) {}
+  return caceDoc;
+}
+
 export async function getAlbums(recentSongs, opts = {}) {
   const songhash = md5(JSON.stringify(recentSongs));
   console.log(topAlbums, topArtists);
@@ -354,7 +368,8 @@ export async function getAlbums(recentSongs, opts = {}) {
   }, recentSongs);
 
   const todyStr = moment().format("YYYYMMDD");
-  const docId = `${todyStr}_albums_v2`;
+  const indexPrefix = opts.type || 'daily';
+  const docId = `${indexPrefix}_${todyStr}_albums`;
   const force = opts.force || false;
   let uniqueAlbums = [];
   let startTime = Date.now();
@@ -426,6 +441,7 @@ export async function getAlbums(recentSongs, opts = {}) {
     };
     if (caceDoc == null) {
       var res = await dailyDb.put(doc);
+      console.log('create doc');
     } else {
       console.log("save", doc);
       await dailyDb.get(caceDoc._id).then(function(doc) {
@@ -444,7 +460,11 @@ export async function getAlbums(recentSongs, opts = {}) {
   }
   const spend = Date.now() - startTime;
   console.log(uniqueAlbums, uniqueAlbums.length, spend);
-  return uniqueAlbums;
+  return {
+    id: docId,
+    // songs: ,
+    albums: uniqueAlbums
+  };
 }
 
 export async function getXiamiCollect() {

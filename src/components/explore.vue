@@ -45,7 +45,7 @@
             正在扫描你最近收藏的歌曲...
           </p>
           <p v-if="fetchSimliar">
-          正在生成今天的推荐...<br>
+          正在生成推荐...<br>
           不要关闭页面！
           </p>
        </div>
@@ -56,6 +56,25 @@
             排除听过的
       </a-checkbox>
       <a-radio-group :options="sourceOptions" v-model="bySource" style="margin-right: 30px"/>
+      <a-button type="primary" @click="visible = true">自定义</a-button>
+      <a-modal v-model="visible" width="65%" title="自定义最近听过的歌曲列表" @ok="createCustom">
+        <div class="form">
+          <div>
+            <p>根据歌曲列表生成推荐专辑列表</p>
+            <div style="margin-top:10px">
+              <a-textarea
+                rows="7"
+                v-model="customsongs"
+                placeholder="歌曲名 艺术家 专辑 一行一条 最好直接从execel复制过来 如
+For Absent Friends	Genesis	Greatest Hits
+Checkmate	Gryphon	Red Queen to Gryphon Three
+Second Spasm	Gryphon	Red Queen to Gryphon Three
+"
+              />
+            </div>
+        </div>
+        </div>
+      </a-modal>
     </div>
     <ul>
       <li v-for="album in showAlbums" :key="album.cover" class="album-item">
@@ -100,14 +119,14 @@
 
 
 <script>
-import { getAlbums, getCloudMusicCollect, getXiamiCollect } from './helper'
+import { getAlbumsByRecId, getAlbums, getCloudMusicCollect, getXiamiCollect } from './helper'
 import axios from 'axios'
 
 const api = axios.create({
   baseURL: "http://localhost:8956",
   timeout: 4000
 });
-
+import md5 from "js-md5";
 var PouchDB = require("pouchdb").default;
 var recentDb = new PouchDB("recent_songs");
 const _ = require('lodash')
@@ -119,6 +138,8 @@ export default {
     return {
       extensionInstalled: false,
       albums: [],
+      visible: false,
+      customsongs: '',
       isScaning: false,
       notFound: false,
       exludeListened: false,
@@ -143,26 +164,16 @@ export default {
     }
   },
   mounted() {
-    var self = this;
-    (function check() {
-      self.extensionInstalled = typeof window.$_musichelper != 'undefined';
-      if(self.extensionInstalled) {
-        self.recom();
-        return
-      }
-      setTimeout(check, 800);
-    })();
-    // this.songs = [{"song":"Pane of Truth","artist":"Sylvan","album":"Posthumous Silence"},{"song":"Shingle Song (2006 Digital Remaster)","artist":"Peter Hammill","album":"Nadir's Big Chance"},{"song":"Questions","artist":"Sylvan","album":"Posthumous Silence"},{"song":"The Devil","artist":"The Enid","album":"In the Region of the Summer Stars (Original 1976 Emi Recording)"},{"song":"Fool / The Falling Tower","artist":"The Enid","album":"In the Region of the Summer Stars (Original 1976 Emi Recording)"},{"song":"Love Will Find A Way","artist":"Yes","album":"Big Generator"},{"song":"Throwing It All Away (2007 Digital Remaster)","artist":"Genesis","album":"Invisible Touch"},{"song":"Domino Medley (2007 Digital Remaster)","artist":"Genesis","album":"Invisible Touch"},{"song":"In Too Deep (2007 Digital Remaster)","artist":"Genesis","album":"Invisible Touch"},{"song":"Invisible Touch (Remastered 2007)","artist":"Genesis","album":"Invisible Touch"},{"song":"Three Boats Down From The Candy (1997 Digital Remaster)","artist":"Marillion","album":"Script For A Jester's Tear"},{"song":"Market Square Heroes (Battle Priest Version) (1997 Digital Remaster)","artist":"Marillion","album":"Script For A Jester's Tear"},{"song":"The Web (1997 Digital Remaster)","artist":"Marillion","album":"Script For A Jester's Tear"},{"song":"Script For A Jester's Tear (1997 Digital Remaster)","artist":"Marillion","album":"Script For A Jester's Tear"},{"song":"Telling the Bees","artist":"Big Big Train","album":"Folklore"},{"song":"Brooklands","artist":"Big Big Train","album":"Folklore"},{"song":"The Transit of Venus Across the Sun","artist":"Big Big Train","album":"Folklore"},{"song":"London Plane","artist":"Big Big Train","album":"Folklore"},{"song":"The Sun","artist":"The Enid","album":"In the Region of the Summer Stars (Original 1976 Emi Recording)"},{"song":"The Lovers","artist":"The Enid","album":"In the Region of the Summer Stars (Original 1976 Emi Recording)"},{"song":"Death, The Reaper","artist":"The Enid","album":"In the Region of the Summer Stars (Original 1976 Emi Recording)"},{"song":"For Absent Friends","artist":"Genesis","album":"Greatest Hits"},{"song":"Checkmate","artist":"Gryphon","album":"Red Queen to Gryphon Three"},{"song":"Second Spasm","artist":"Gryphon","album":"Red Queen to Gryphon Three"},{"song":"Opening Move","artist":"Gryphon","album":"Red Queen to Gryphon Three"},{"song":"Paper Chase","artist":"Anthony Phillips","album":"Wise After the Event"},{"song":"Greenhouse","artist":"Anthony Phillips","album":"Wise After the Event"},{"song":"Regrets","artist":"Anthony Phillips","album":"Wise After the Event"},{"song":"Ripples (2007 - Remaster)","artist":"Genesis","album":"A Trick Of The Tail"},{"song":"Entangled (2007 - Remaster)","artist":"Genesis","album":"A Trick Of The Tail"},{"song":"The Colony Of Slippermen (The Arrival/A Visit To The Doktor/Raven) (2008 Digital Remaster)","artist":"Genesis","album":"The Lamb Lies Down On Broadway"},{"song":"The Waiting Room (2008 Digital Remaster)","artist":"Genesis","album":"The Lamb Lies Down On Broadway"},{"song":"For Absent Friends (Digital Remastered 2008)","artist":"Genesis","album":"Nursery Cryme"},{"song":"Seven Stones (Digital Remastered 2008)","artist":"Genesis","album":"Nursery Cryme"},{"song":"The Musical Box (Digital Remastered 2008)","artist":"Genesis","album":"Nursery Cryme"},{"song":"Stagnation (Digital Remastered 2008)","artist":"Genesis","album":"Trespass"},{"song":"Looking For Someone (Digital Remastered 2008)","artist":"Genesis","album":"Trespass"},{"song":"In Hiding","artist":"Genesis","album":"From Genesis To Revelation"},{"song":"A Day Will Come","artist":"Buckethead","album":"Population Override"},{"song":"In The Wilderness","artist":"Genesis","album":"From Genesis To Revelation"},{"song":"A Day Will Come","artist":"Buckethead","album":"Population Override"},{"song":"Earth Heals Herself","artist":"Buckethead","album":"Population Override"}]
-    // setTimeout(() => {
-    //   this.recom();
-    // }, 1000)
-    this.loadLocalData();
+    this.initliaze();
   },
   watch: {
+    $route() {
+      this.initliaze();
+    },
     albumsIsCollected() {
       const aIndex = {};
       this.albumsIsCollected.forEach(_ => {
-        const indexStr = _.album.toLocaleLowerCase()
+        const indexStr = _.album.toLocaleLowerCase().replace(' (Deluxe Edition)', '').replace(' (Remastered Version)', '')
         aIndex[indexStr] = [_];
       });
       this.allAlbumIndex = aIndex;
@@ -171,6 +182,7 @@ export default {
   },
   computed: {
     showAlbums() {
+      console.log('showAlbums.recompute')
       let dataSet = this.albums.filter(_ => {
         if(this.exludeListened) {
           // const isInLibiary = this.albumsIsCollected.filter(ab => ab.album_name == _.album)
@@ -217,6 +229,82 @@ export default {
     }
   },
   methods: {
+    initliaze() {
+      var recid = this.$route.query.recid || null
+      this.loadLocalData();
+      if(recid == null) {
+        var self = this;
+        (function check() {
+          self.extensionInstalled = typeof window.$_musichelper != 'undefined';
+          if(self.extensionInstalled) {
+            self.recom();
+            return
+          }
+          setTimeout(check, 800);
+        })();
+        // this.songs = [{"song":"Pane of Truth","artist":"Sylvan","album":"Posthumous Silence"},{"song":"Shingle Song (2006 Digital Remaster)","artist":"Peter Hammill","album":"Nadir's Big Chance"},{"song":"Questions","artist":"Sylvan","album":"Posthumous Silence"},{"song":"The Devil","artist":"The Enid","album":"In the Region of the Summer Stars (Original 1976 Emi Recording)"},{"song":"Fool / The Falling Tower","artist":"The Enid","album":"In the Region of the Summer Stars (Original 1976 Emi Recording)"},{"song":"Love Will Find A Way","artist":"Yes","album":"Big Generator"},{"song":"Throwing It All Away (2007 Digital Remaster)","artist":"Genesis","album":"Invisible Touch"},{"song":"Domino Medley (2007 Digital Remaster)","artist":"Genesis","album":"Invisible Touch"},{"song":"In Too Deep (2007 Digital Remaster)","artist":"Genesis","album":"Invisible Touch"},{"song":"Invisible Touch (Remastered 2007)","artist":"Genesis","album":"Invisible Touch"},{"song":"Three Boats Down From The Candy (1997 Digital Remaster)","artist":"Marillion","album":"Script For A Jester's Tear"},{"song":"Market Square Heroes (Battle Priest Version) (1997 Digital Remaster)","artist":"Marillion","album":"Script For A Jester's Tear"},{"song":"The Web (1997 Digital Remaster)","artist":"Marillion","album":"Script For A Jester's Tear"},{"song":"Script For A Jester's Tear (1997 Digital Remaster)","artist":"Marillion","album":"Script For A Jester's Tear"},{"song":"Telling the Bees","artist":"Big Big Train","album":"Folklore"},{"song":"Brooklands","artist":"Big Big Train","album":"Folklore"},{"song":"The Transit of Venus Across the Sun","artist":"Big Big Train","album":"Folklore"},{"song":"London Plane","artist":"Big Big Train","album":"Folklore"},{"song":"The Sun","artist":"The Enid","album":"In the Region of the Summer Stars (Original 1976 Emi Recording)"},{"song":"The Lovers","artist":"The Enid","album":"In the Region of the Summer Stars (Original 1976 Emi Recording)"},{"song":"Death, The Reaper","artist":"The Enid","album":"In the Region of the Summer Stars (Original 1976 Emi Recording)"},{"song":"For Absent Friends","artist":"Genesis","album":"Greatest Hits"},{"song":"Checkmate","artist":"Gryphon","album":"Red Queen to Gryphon Three"},{"song":"Second Spasm","artist":"Gryphon","album":"Red Queen to Gryphon Three"},{"song":"Opening Move","artist":"Gryphon","album":"Red Queen to Gryphon Three"},{"song":"Paper Chase","artist":"Anthony Phillips","album":"Wise After the Event"},{"song":"Greenhouse","artist":"Anthony Phillips","album":"Wise After the Event"},{"song":"Regrets","artist":"Anthony Phillips","album":"Wise After the Event"},{"song":"Ripples (2007 - Remaster)","artist":"Genesis","album":"A Trick Of The Tail"},{"song":"Entangled (2007 - Remaster)","artist":"Genesis","album":"A Trick Of The Tail"},{"song":"The Colony Of Slippermen (The Arrival/A Visit To The Doktor/Raven) (2008 Digital Remaster)","artist":"Genesis","album":"The Lamb Lies Down On Broadway"},{"song":"The Waiting Room (2008 Digital Remaster)","artist":"Genesis","album":"The Lamb Lies Down On Broadway"},{"song":"For Absent Friends (Digital Remastered 2008)","artist":"Genesis","album":"Nursery Cryme"},{"song":"Seven Stones (Digital Remastered 2008)","artist":"Genesis","album":"Nursery Cryme"},{"song":"The Musical Box (Digital Remastered 2008)","artist":"Genesis","album":"Nursery Cryme"},{"song":"Stagnation (Digital Remastered 2008)","artist":"Genesis","album":"Trespass"},{"song":"Looking For Someone (Digital Remastered 2008)","artist":"Genesis","album":"Trespass"},{"song":"In Hiding","artist":"Genesis","album":"From Genesis To Revelation"},{"song":"A Day Will Come","artist":"Buckethead","album":"Population Override"},{"song":"In The Wilderness","artist":"Genesis","album":"From Genesis To Revelation"},{"song":"A Day Will Come","artist":"Buckethead","album":"Population Override"},{"song":"Earth Heals Herself","artist":"Buckethead","album":"Population Override"}]
+        // setTimeout(() => {
+        //   this.recom();
+        // }, 1000)
+      } else {
+        this.extensionInstalled = true;
+        this.loadRec(recid);
+      }
+    },
+    processShowData(albums) {
+      return albums.map(_ => {
+        _.cover = _.cover.replace('https://', '').replace('.webp', '')
+        _.cover = `https://i1.wp.com/${_.cover}`
+        var searchWordReal = _.artist ? `${_.album}  ${_.artist}`: _.album
+        var searchWord = encodeURIComponent(searchWordReal)
+        _.cloudmusicLink = `https://music.163.com/#/search/m/?s=${searchWord}&type=1`
+        var xW = encodeURIComponent(JSON.stringify({
+          searchKey: searchWordReal
+        }));
+        _.albumKeyword = searchWordReal
+        _.listeners = _.listeners || 0;
+        _.xiamiLink = `https://www.xiami.com/list?scene=search&type=song&query=${xW}`
+        return _;
+      })
+    },
+    async loadRec(docId) {
+      const recoResult = await getAlbumsByRecId(docId)
+      const albums = recoResult.albums
+      try {
+        _hmt && _hmt.push(['_trackEvent', 'explre', 'loadRec', albums.length]);
+      } catch (e) {}
+      this.fetchSimliar = false
+      const parsedAlbums = this.processShowData(albums)
+      this.albums = _.shuffle(parsedAlbums);
+    },
+    async createCustom() {
+      const customssongs = this.customsongs.split("\n")
+      .map(_ => _.split("\t"))
+      .map(_ => {
+        return {
+          song: _[0],
+          artist: _[1],
+          album: _[2]
+        };
+      }).filter(_ => _.artist);
+      if(customssongs.length == 0) {
+        alert('解析失败');
+        return
+      }
+      this.albums = []
+      const songHash = md5(JSON.stringify(customssongs)).substr(0, 6);
+      const result = await this.recom(false, {
+        type: 'custom_' + songHash,
+        songs: customssongs
+      })
+      this.visible = false;
+      // console.log(result)
+      this.$router.push({
+        query: {
+          recid: result.id
+        }
+      })
+    },
     playAlbum(album) {
       window.$player.playAlbum(album.albumKeyword)
     },
@@ -252,68 +340,79 @@ export default {
      
       // console.log('loadLocalData', data)
     },
-    async recom(force = false) {
+    async recom(force = false, opts = {}) {
       try {
         _hmt && _hmt.push(['_trackEvent', 'explre', 'recom', 'init']);
       } catch (e) {}
-      const recentDocId = 'recent';
-      let cacheDoc = null
-      try {
-        cacheDoc = await recentDb.get(recentDocId)
-      } catch (e) {
 
+      const type = opts.type || 'recent';
+      const isNotRecent = type != 'recent'
+      let recBySongs = []
+
+      if(isNotRecent) {
+        recBySongs = opts.songs;
       }
-      const needFetch = cacheDoc == null || cacheDoc != null && ((Date.now() - cacheDoc.time) > 60 * 120 * 1000);
-      let rencetSongs = []
-         console.log('cacheDoc', cacheDoc, 'needFetch', needFetch)
-      if(needFetch) {
-        this.isScaning = true
-        try {
-          const allData = await Promise.all([
-            getXiamiCollect(),
-            getCloudMusicCollect()
-          ]);
-          rencetSongs = [].concat(allData[1].slice(0, 50), allData[0].slice(0, 50))
-          console.log('rencetSongs', rencetSongs)
-          if (rencetSongs.length) {
-            cacheDoc = cacheDoc == null ? {
-              _id: recentDocId
-            } : cacheDoc
-            cacheDoc.songs = rencetSongs;
-            cacheDoc.time = Date.now()
-            await recentDb.put(cacheDoc)
-            this.notFound = false
-          } else {
-            this.notFound = true
-            console.log('not found songs')
-          }
 
-          const allSongsDocId = 'all_songs';
+      if(!isNotRecent) {
+        const recentDocId = 'recent';
+        let cacheDoc = null
+        try {
+          cacheDoc = await recentDb.get(recentDocId)
+        } catch (e) {}
+        const needFetch = cacheDoc == null || cacheDoc != null && ((Date.now() - cacheDoc.time) > 60 * 120 * 1000);
+        let rencetSongs = []
+          console.log('cacheDoc', cacheDoc, 'needFetch', needFetch)
+        if(needFetch) {
+          this.isScaning = true
           try {
-            const eDoc = await recentDb.get(allSongsDocId)
-            eDoc.all_songs = {
-              xiami: allData[0],
-              cloudmusic: allData[1]
+            const allData = await Promise.all([
+              getXiamiCollect(),
+              getCloudMusicCollect()
+            ]);
+            rencetSongs = [].concat(allData[1].slice(0, 50), allData[0].slice(0, 50))
+            console.log('rencetSongs', rencetSongs)
+            if (rencetSongs.length) {
+              cacheDoc = cacheDoc == null ? {
+                _id: recentDocId
+              } : cacheDoc
+              cacheDoc.songs = rencetSongs;
+              cacheDoc.time = Date.now()
+              await recentDb.put(cacheDoc)
+              this.notFound = false
+            } else {
+              this.notFound = true
+              console.log('not found songs')
             }
-            eDoc.time = Date.now()
-            await recentDb.put(eDoc)
-          } catch (e) {
-            console.log('update failed try create')
-            await recentDb.put({
-              _id: allSongsDocId,
-              all_songs: {
+
+            const allSongsDocId = 'all_songs';
+            try {
+              const eDoc = await recentDb.get(allSongsDocId)
+              eDoc.all_songs = {
                 xiami: allData[0],
                 cloudmusic: allData[1]
-              },
-              time: Date.now()
-            })
+              }
+              eDoc.time = Date.now()
+              await recentDb.put(eDoc)
+            } catch (e) {
+              console.log('update failed try create')
+              await recentDb.put({
+                _id: allSongsDocId,
+                all_songs: {
+                  xiami: allData[0],
+                  cloudmusic: allData[1]
+                },
+                time: Date.now()
+              })
+            }
+          } catch (e) {
           }
-        } catch (e) {
+          this.isScaning = false
+        } else {
+          rencetSongs = cacheDoc.songs
         }
-        this.isScaning = false
-      } else {
-        rencetSongs = cacheDoc.songs
+        recBySongs = rencetSongs;
       }
+      
       try {
         _hmt && _hmt.push(['_trackEvent', 'explre', 'rencentSongs', rencetSongs.length]);
       } catch (e) {}
@@ -321,11 +420,14 @@ export default {
       // const songs = await getCloudMusicCollect();
       // const recent = songs.splice(0, 40)
       // rencetSongs = rencetSongs.slice(0, 50)
-      console.log('rencetSongs', rencetSongs)
+      console.log('recBySongs', recBySongs)
       this.fetchSimliar = true
-      const albums = await getAlbums(rencetSongs, {
+      const recoResult = await getAlbums(recBySongs, {
+        type: type
         // force: true
       })
+
+      const albums = recoResult.albums
       try {
         _hmt && _hmt.push(['_trackEvent', 'explre', 'getAlbums', albums.length]);
       } catch (e) {}
@@ -345,6 +447,7 @@ export default {
         return _;
       })
       this.albums = _.shuffle(parsedAlbums);
+      return recoResult
     }
   }
 }

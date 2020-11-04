@@ -3,8 +3,13 @@
     <div style="padding: 15px"></div>
     <h2>推荐机制</h2>
     <p>基于当前浏览器登录过的网易云音乐账号+虾米音乐最近收藏的50首歌。</p>
-    <p>然后按专辑收藏数量分别去last.fm 豆瓣音乐，抓取相似的专辑。</p>
-    <p>根据本地库或线上库排除已经听过的专辑，按照个人需要再排序！</p>
+    <p>然后按专辑收藏数量分别去音乐平台，抓取相似的专辑。</p>
+    <p>根据本地库或线上库排除已经听过的专辑，按需要再排序！</p>
+    <h2 style="margin-top:25px">数据源</h2>
+    <ul>
+      <li><a href="https://www.last.fm/" target="_blank">last.fm</a></li>
+      <li><a href="https://music.douban.com/tag/" target="_blank">豆瓣音乐</a></li>
+    </ul>
     <div style="text-align: left; padding-top: 50px;" class="about-page">
       <a
         href="https://music.wechatsync.com/?utm_source=extension_about"

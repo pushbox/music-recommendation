@@ -1,5 +1,10 @@
+const axios = require("axios");
+const proxyAPI = axios.create({
+  baseURL: "https://api.wechatsync.com",
+  timeout: 15 * 1000,
+});
 
-export function httpGet(url, timeout = 30000) {
+export function httpGetByExtension(url, timeout = 30000) {
   return new Promise((resolve, reject) => {
     console.log("window.$_musichelper", url);
     window.$_musichelper.httpGet({ url: url }, function(error, data) {
@@ -16,6 +21,22 @@ export function httpGet(url, timeout = 30000) {
   });
 }
 
+export async function httpGet(url, timeout = 30000) {
+  if(url.indexOf('last.fm') > -1) {
+    try {
+      const { data } = await proxyAPI.get('/music/http', {
+        params: {
+          url: url
+        }
+      });
+      if(data.response) {
+        return data.response
+      }
+    } catch (e) {}
+  }
+  return await httpGetByExtension(url, timeout);
+}
+
 export function removeBlankToSpace(str) {
     if(str == null) return str
     return str.replace(new RegExp(String.fromCharCode(160), "g"), " ");
@@ -30,8 +51,9 @@ export function getResizeImage (src, size = null) {
 
 const isElectron = window.navigator.userAgent.indexOf("Electron") > -1;
 const isChrome = window.navigator.userAgent.indexOf("Chrome") > -1;
-const axios = require("axios");
+
 if (!isChrome || isElectron) {
+  
   const api = axios.create({
     baseURL: "http://localhost:8956",
     timeout: 60 * 1000,
@@ -56,6 +78,13 @@ if (!isChrome || isElectron) {
       }
     })();
   };
+
+  bridge.executeCode = function (win, code) {
+    win.postMessage(JSON.stringify({
+      method: 'executeCode',
+      code: code
+    }), "*");
+  }
 
   window.$_musichelper = bridge;
 }

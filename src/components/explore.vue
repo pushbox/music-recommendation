@@ -119,49 +119,50 @@ Second Spasm	Gryphon	Red Queen to Gryphon Three
         </div>
       </li>
     </ul>
-
     <ul>
-      <li v-for="(album) in showAlbums" :key="album.cover"  class="album-item">
-        <div style="position: relative;">
-        <div class="image">
-          <div class="cover-image">
-              <div class="layout-image">
-              <img v-lazy="album.cover" class="layout-image-image"  />
-            </div>
-          </div>
-        </div>
-        <div class="playlink">
-           <a-icon type="play-circle" @click="playAlbum(album)" :style="{ fontSize: '38px', color: 'white' }" />
-        </div>
-        <div class="image-content">
-          <h3 class="album-title">{{ album.album }}</h3>
-          <!-- <p> {{ album.album }} </p> -->
-          <p class="desc">
-            <template v-if="album.artist">{{ album.artist }}<br></template>
-            <template v-if="album.listeners">{{ album.listeners }} 人听过<br></template>
-            <span class="outlinks" style="margin-top:10px; display: inline-block;"><a :href="album.cloudmusicLink" target="_blank">
-              <img src="@/assets/163.png" height="18"/>
-            </a>
-            <a :href="album.xiamiLink" target="_blank">
-              <img src="@/assets/xiami.png" height="18"/>
-            </a>
-            </span>
-            <!-- <a-icon name="play" /> -->
-          </p>
-          <!-- <p>基于 {{ album.rec_by.album }} 推荐</p> -->
-        </div>
-        </div>
-        <div class="context">
-          基于 <a-tooltip>
-    <template slot="title">
-      {{ album.rec_by.album }}
-    </template>
-    <a :href="album.rec_by.detail" :title="album.rec_by.album " target="_blank">{{ album.rec_by.album }}</a>
-  </a-tooltip> 推荐
-        </div>
-      </li>
+      <a-list v-show="showAlbums.length > 0" :data-source="showAlbums" :rowKey="item => item.cover" :pagination="paginationProps">
+        <a-list-item slot="renderItem" class="album-item" slot-scope="album" style="border: 0">
+              <div style="position: relative;">
+              <div class="image">
+                <div class="cover-image">
+                    <div class="layout-image">
+                    <img v-lazy="album.cover" class="layout-image-image"  />
+                  </div>
+                </div>
+              </div>
+              <div class="playlink">
+                <a-icon type="play-circle" @click="playAlbum(album)" :style="{ fontSize: '38px', color: 'white' }" />
+              </div>
+              <div class="image-content">
+                <h3 class="album-title">{{ album.album }}</h3>
+                <!-- <p> {{ album.album }} </p> -->
+                <p class="desc">
+                  <template v-if="album.artist">{{ album.artist }}<br></template>
+                  <template v-if="album.listeners">{{ album.listeners }} 人听过<br></template>
+                  <span class="outlinks" style="margin-top:10px; display: inline-block;"><a :href="album.cloudmusicLink" target="_blank">
+                    <img src="@/assets/163.png" height="18"/>
+                  </a>
+                  <a :href="album.xiamiLink" target="_blank">
+                    <img src="@/assets/xiami.png" height="18"/>
+                  </a>
+                  </span>
+                  <!-- <a-icon name="play" /> -->
+                </p>
+                <!-- <p>基于 {{ album.rec_by.album }} 推荐</p> -->
+              </div>
+              </div>
+              <div class="context">
+                基于 <a-tooltip>
+          <template slot="title">
+            {{ album.rec_by.album }}
+          </template>
+          <a :href="album.rec_by.detail" :title="album.rec_by.album " target="_blank">{{ album.rec_by.album }}</a>
+        </a-tooltip> 推荐
+              </div>
+        </a-list-item>
+      </a-list>
     </ul>
-    <div v-if="albums.length" style="padding: 0 10px 20px">{{ showAlbums.length }}张</div>
+    <!-- <div v-if="albums.length" style="padding: 0 10px 20px">{{ showAlbums.length }}张</div> -->
   </div>
 </div>
 </template>
@@ -194,9 +195,11 @@ export default {
       notFound: false,
       exludeListened: false,
       sortByListeners: false,
+      currentPage: 1,
       albumsIsCollected: [],
       fetchSimliar: false,
       allAlbumIndex: {},
+      cloumnCount: 4,
       currentFound: null,
       sortByType: 'rec',
       bySource: 'all',
@@ -215,9 +218,20 @@ export default {
     }
   },
   mounted() {
+    this.cloumnCount = 24 / (Math.floor(250 / ( window.innerWidth / 24)))
     this.initliaze();
   },
   watch: {
+    exludeListened() {
+      this.currentPage = 1
+    },
+    bySource() {
+      this.currentPage = 1
+    },
+    sortByType() {
+      this.currentPage = 1
+      console.log('changed', this.currentPage)
+    },
     $route() {
       this.initliaze();
     },
@@ -232,6 +246,19 @@ export default {
     }
   },
   computed: {
+    paginationProps () {
+      return {
+        showSizeChanger: true, 
+        current: this.currentPage,
+        pageSizeOptions: ['50', '80', '200', '1000'],
+        defaultPageSize: 50,
+        onChange: (page, pageSize) => {
+          this.currentPage = page
+          console.log(page, pageSize)
+          this.goTop();
+        }
+      }
+    },
     showAlbums() {
       console.log('showAlbums.recompute')
       let dataSet = this.albums.filter(_ => {
@@ -280,6 +307,9 @@ export default {
     }
   },
   methods: {
+    goTop() {
+      document.querySelector("#main-viewport").scrollTop = 0
+    },
     initliaze() {
       var recid = this.$route.query.recid || null
       this.loadLocalData();

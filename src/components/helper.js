@@ -103,7 +103,7 @@ async function getSimliarAlbumsByPlatform(type, topAlbums, conCount, progressLis
           console.log('call error', e, results)
         }
       }
-      console.log('results', results, stepAlbums)
+      console.log('results', type, results, stepAlbums)
     } catch (e) {
       console.log('run.error', e)
     }
@@ -128,7 +128,7 @@ async function getSimliarAlbums(albums, progressListenner) {
   try {
       const results = await Promise.all(
         types.map((_) => {
-          const cCount = _.count || 5;
+          const cCount = _.count || 4;
           return getSimliarAlbumsByPlatform(_.type, albums, cCount, progressListenner);
         })
       );
@@ -178,16 +178,16 @@ export async function getAlbums(recentSongs, opts = {}) {
   }).filter(_ => _.album);
 
   topAlbums =
-    topAlbums.length > 10
-      ? [].concat(topAlbums.slice(0, 10), _.shuffle(topAlbums.slice(10, topAlbums.length).slice(0, 5)))
+    topAlbums.length > 15
+      ? [].concat(topAlbums.slice(0, 15), _.shuffle(topAlbums.slice(15, topAlbums.length).slice(0, 10)))
       : topAlbums;
   // const topArtists = getTop(i => {
   //   return [i.artist].join("==");
   // }, recentSongs);
   const todyStr = moment().format("YYYYMMDD");
   const indexPrefix = opts.type || 'daily';
-  const docId = `${indexPrefix}_${todyStr}_albums`;
-  const force = opts.force || true;
+  const docId = `${indexPrefix}_${todyStr}_albums_v6`;
+  const force = opts.force || false;
   let uniqueAlbums = [];
   let startTime = Date.now();
   let progressListenner = opts.progress || function() {};
@@ -247,7 +247,6 @@ export async function getAlbums(recentSongs, opts = {}) {
   uniqueAlbums = JSON.parse(JSON.stringify(uniqueAlbums))
   return {
     id: docId,
-    // songs: ,
     albums: uniqueAlbums
   };
 }

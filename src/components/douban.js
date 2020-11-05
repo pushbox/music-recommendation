@@ -17,13 +17,16 @@ class Douban {
   }
 
   async getSimliarAlbumsByAlbum() {
-    console.log("getSimliarAlbumsByAlbum");
-    const searchUrl =
-      `https://search.douban.com/music/subject_search?search_text=` +
-      encodeURIComponent(`${this.artist} ${this.album}`);
-    console.log("searchUrl", searchUrl);
-    const pageData = await this.extractPageData(searchUrl);
-    return pageData.simliarAlbums;
+    try {
+      console.log("getSimliarAlbumsByAlbum");
+      const searchUrl =
+        `https://search.douban.com/music/subject_search?search_text=` +
+        encodeURIComponent(`${this.artist} ${this.album}`);
+      console.log("searchUrl", searchUrl);
+      const pageData = await this.extractPageData(searchUrl);
+      return pageData.simliarAlbums;
+    } catch (e) {}
+    return []
   }
 
   async extractPageData(url) {
@@ -128,6 +131,7 @@ class Douban {
       attr: albumMeta.attrs,
       detail: netPageUrl,
     };
+    
     simliarAlbums = simliarAlbums.map((_) => {
       _.rec_by = currentAlbum;
       _.album = _.album && _.album.trim();
@@ -135,7 +139,7 @@ class Douban {
       _.album_id = _.album_id && _.album_id.split("/")[4];
       _.type = "douban";
       return _;
-    });
+    }).filter(_ => _.cover);
 
     console.log(
       simliarAlbums,

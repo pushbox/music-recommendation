@@ -134,8 +134,9 @@ Second Spasm	Gryphon	Red Queen to Gryphon Three
                 <a-icon type="play-circle" @click="playAlbum(album)" :style="{ fontSize: '38px', color: 'white' }" />
               </div>
               <div class="image-content">
-                <h3 class="album-title">{{ album.album }}</h3>
-                <!-- <p> {{ album.album }} </p> -->
+                <h3 class="album-title">
+                  <a target="_blank" :href="album.cloudmusicLink">{{ album.album }}</a>
+                </h3>
                 <p class="desc">
                   <template v-if="album.artist">{{ album.artist }}<br></template>
                   <template v-if="album.listeners">{{ album.listeners }} 人听过<br></template>

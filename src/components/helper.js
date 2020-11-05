@@ -167,21 +167,27 @@ export async function getAlbums(recentSongs, opts = {}) {
   const songhash = md5(JSON.stringify(recentSongs));
   // console.log(topAlbums, topArtists);
   let totalAlbums = [];
-  const topAlbums = getTop(i => {
+  let topAlbums = getTop(i => {
     return [i.album, i.artist].join("==");
   }, recentSongs).map(_ => {
     return {
       artist: _.name.split("==")[1],
-      album: _.name.split("==")[0]
+      album: _.name.split("==")[0],
+      count: _.count,
     };
-  });
+  }).filter(_ => _.album);
+
+  topAlbums =
+    topAlbums.length > 10
+      ? [].concat(topAlbums.slice(0, 10), _.shuffle(topAlbums.slice(10, topAlbums.length).slice(0, 5)))
+      : topAlbums;
   // const topArtists = getTop(i => {
   //   return [i.artist].join("==");
   // }, recentSongs);
   const todyStr = moment().format("YYYYMMDD");
   const indexPrefix = opts.type || 'daily';
   const docId = `${indexPrefix}_${todyStr}_albums`;
-  const force = opts.force || false;
+  const force = opts.force || true;
   let uniqueAlbums = [];
   let startTime = Date.now();
   let progressListenner = opts.progress || function() {};
@@ -209,7 +215,7 @@ export async function getAlbums(recentSongs, opts = {}) {
       byImages[_][0].repeatCount = byImages[_].length;
       return byImages[_][0];
     });
-    console.log("uniqueAlbums", uniqueAlbums.length);
+    console.log("uniqueAlbums", uniqueAlbums, uniqueAlbums.length);
     var doc = {
       _id: docId,
       albums: uniqueAlbums,
@@ -236,7 +242,7 @@ export async function getAlbums(recentSongs, opts = {}) {
     uniqueAlbums = caceDoc.albums;
   }
   const spend = Date.now() - startTime;
-  console.log(uniqueAlbums, uniqueAlbums.length, spend);
+  console.log("uniqueAlbums", uniqueAlbums, uniqueAlbums.length, spend);
 
   uniqueAlbums = JSON.parse(JSON.stringify(uniqueAlbums))
   return {
@@ -246,11 +252,42 @@ export async function getAlbums(recentSongs, opts = {}) {
   };
 }
 
+function isDesktop() {
+  return window.$_musichelper && window.$_musichelper.isDesktop;
+}
+
+const axios = require("axios");
+const api = axios.create({
+  baseURL: "http://localhost:8956",
+  timeout: 30000,
+});
+
 export async function getXiamiCollect() {
   try {
-    const recentSongs = await httpGet(
-      "https://emumo.xiami.com/playersong/getgradesong?_ksTS=1604148909907_835"
-    );
+    if (isDesktop()) {
+      const { data } = await api.get("/api/song/query", {
+        params: {
+          dsl: {
+            where: {
+              type: "xiami",
+            },
+            order: [["id", "desc"]],
+          },
+        },
+      });
+      console.log("getXiamiCollect", data);
+      return data.map(_ => {
+        return {
+          type: "xiami",
+          album: removeBlankToSpace(_.album_name),
+          artist: removeBlankToSpace(_.artist_name),
+          song: removeBlankToSpace(_.song_name),
+        };
+      });
+    }
+      const recentSongs = await httpGet(
+        "https://emumo.xiami.com/playersong/getgradesong?_ksTS=1604148909907_835"
+      );
     if (recentSongs.status === false) {
       throw new Error("not login");
     }
@@ -277,6 +314,27 @@ export async function getCloudMusicCollect() {
 }
 
 export async function _getCloudMusicCollect() {
+  if (isDesktop()) {
+    const { data } = await api.get("/api/song/query", {
+      params: {
+        dsl: {
+          where: {
+            type: "cloudmusic",
+          },
+          order: [["id", "desc"]],
+        },
+      },
+    });
+    console.log("getXiamiCollect", data);
+    return data.map((_) => {
+      return {
+        type: "cloudmusic",
+        album: removeBlankToSpace(_.album_name),
+        artist: removeBlankToSpace(_.artist_name),
+        song: removeBlankToSpace(_.song_name),
+      };
+    });
+  }
   const pagetml = await httpGet("https://music.163.com");
   const data = pagetml.substring(
     pagetml.indexOf("var GUser="),

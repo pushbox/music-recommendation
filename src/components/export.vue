@@ -38,8 +38,7 @@
     </div>
   </div>
   <div class="page" v-if="extensionInstalled && !notFound || fetchSimliar">
-    <!-- <h2 class="page-title">今日推荐</h2> -->
-     <div class="page-content">
+     <!-- <div class="page-content">
        <div v-if="fetchSimliar || isScaning">
           <scale-loader class="loading" style="text-align:left; margin-bottom: 10px" :loading="true" color="white" ></scale-loader>
           <p v-if="isScaning">
@@ -50,119 +49,19 @@
           不要关闭页面！
           </p>
        </div>
-    </div>
-    <div class="filter-bar" v-if="!fetchSimliar && !isScaning">
-      <a-radio-group :options="sortOptions" v-model="sortByType" style="margin-right: 10px"/>
-      <a-checkbox v-model="exludeListened">
-            排除听过的
-      </a-checkbox>
-      <a-radio-group :options="sourceOptions" v-model="bySource" style="margin-right: 10px"/>
-      <a-button type="primary" @click="visible = true" icon="edit">自定义</a-button>
-      <a-modal v-model="visible" width="65%" title="自定义最近听过的歌曲列表" @ok="createCustom">
-        <div class="form">
-          <div>
-            <p>根据歌曲列表生成推荐专辑列表</p>
-            <div style="margin-top:10px">
-              <a-textarea
-                rows="7"
-                v-model="customsongs"
-                placeholder="歌曲名 艺术家 专辑 一行一条 最好直接从execel复制过来 如
-For Absent Friends	Genesis	Greatest Hits
-Checkmate	Gryphon	Red Queen to Gryphon Three
-Second Spasm	Gryphon	Red Queen to Gryphon Three
-"
-              />
-            </div>
-        </div>
-        </div>
-      </a-modal>
-    </div>
+    </div> -->
 
-    <ul v-if="fetchSimliar && currentFound">
-      <li v-for="album in currentFound.items" :key="album.cover" class="album-item">
-        <div style="position: relative;">
-        <div class="image">
-          <div class="cover-image">
-              <div class="layout-image">
-              <img :src="album.cover" class="layout-image-image"  />
-            </div>
-          </div>
+    <div class="page-content">
+     <!-- <a-card :bordered="true" type="inner" :bodyStyle="{ padding: '25px 20px' }"> -->
+        <h2>虾米音乐导出工具</h2>
+        <div style="padding: 25px 0" class="filter-bar" v-if="!fetchSimliar && !isScaning">
+            <a-checkbox-group :options="exportTypes" v-model="needExports" style="margin-right: 10px"/>
         </div>
-        <div class="playlink">
-           <a-icon type="play-circle" @click="playAlbum(album)" :style="{ fontSize: '38px', color: 'white' }" />
-        </div>
-        <div class="image-content">
-          <h3 class="album-title">{{ album.album }}</h3>
-          <!-- <p> {{ album.album }} </p> -->
-          <p class="desc">
-            <template v-if="album.artist">{{ album.artist }}<br></template>
-            <template v-if="album.listeners">{{ album.listeners }} 人听过<br></template>
-            <span class="outlinks" style="margin-top:10px; display: inline-block;"><a :href="album.cloudmusicLink" target="_blank">
-              <img src="@/assets/163.png" height="18"/>
-            </a>
-            <a :href="album.xiamiLink" target="_blank">
-              <img src="@/assets/xiami.png" height="18"/>
-            </a>
-            </span>
-            <!-- <a-icon name="play" /> -->
-          </p>
-          <!-- <p>基于 {{ album.rec_by.album }} 推荐</p> -->
-        </div>
-        </div>
-        <div class="context">
-          基于 <a-tooltip>
-    <template slot="title">
-      {{ album.rec_by.album }}
-    </template>
-    <a :href="album.rec_by.detail" :title="album.rec_by.album " target="_blank">{{ album.rec_by.album }}</a>
-  </a-tooltip> 推荐
-        </div>
-      </li>
-    </ul>
-    <ul>
-      <a-list v-show="showAlbums.length > 0" :data-source="showAlbums" :rowKey="item => item.cover" :pagination="paginationProps">
-        <a-list-item slot="renderItem" class="album-item" slot-scope="album" style="border: 0">
-              <div style="position: relative;">
-              <div class="image">
-                <div class="cover-image">
-                    <div class="layout-image">
-                    <img v-lazy="album.cover" class="layout-image-image"  />
-                  </div>
-                </div>
-              </div>
-              <div class="playlink">
-                <a-icon type="play-circle" @click="playAlbum(album)" :style="{ fontSize: '38px', color: 'white' }" />
-              </div>
-              <div class="image-content">
-                <h3 class="album-title">
-                  <a target="_blank" :href="album.cloudmusicLink">{{ album.album }}</a>
-                </h3>
-                <p class="desc">
-                  <template v-if="album.artist">{{ album.artist }}<br></template>
-                  <template v-if="album.listeners">{{ album.listeners }} 人听过<br></template>
-                  <span class="outlinks" style="margin-top:10px; display: inline-block;"><a :href="album.cloudmusicLink" target="_blank">
-                    <img src="@/assets/163.png" height="18"/>
-                  </a>
-                  <a :href="album.xiamiLink" target="_blank">
-                    <img src="@/assets/xiami.png" height="18"/>
-                  </a>
-                  </span>
-                  <!-- <a-icon name="play" /> -->
-                </p>
-                <!-- <p>基于 {{ album.rec_by.album }} 推荐</p> -->
-              </div>
-              </div>
-              <div class="context">
-                基于 <a-tooltip>
-          <template slot="title">
-            {{ album.rec_by.album }}
-          </template>
-          <a :href="album.rec_by.detail" :title="album.rec_by.album " target="_blank">{{ album.rec_by.album }}</a>
-        </a-tooltip> 推荐
-              </div>
-        </a-list-item>
-      </a-list>
-    </ul>
+        <a-button type="primary" size="large" @click="exportTask">
+          开始导出
+        </a-button>
+     <!-- </a-card> -->
+    </div>
     <!-- <div v-if="albums.length" style="padding: 0 10px 20px">{{ showAlbums.length }}张</div> -->
   </div>
 </div>
@@ -173,6 +72,8 @@ Second Spasm	Gryphon	Red Queen to Gryphon Three
 import { getAlbumsByRecId, getAlbums, getCloudMusicCollect, getXiamiCollect } from './helper'
 import axios from 'axios'
 import { getResizeImage } from './api'
+import { Exporter } from './exporter'
+
 
 const api = axios.create({
   baseURL: "http://localhost:8956",
@@ -180,7 +81,7 @@ const api = axios.create({
 });
 import md5 from "js-md5";
 var PouchDB = require("pouchdb").default;
-var recentDb = new PouchDB("recent_songs");
+var taskDB = new PouchDB("export_tasks");
 const _ = require('lodash')
 import ScaleLoader from 'vue-spinner/src/ScaleLoader.vue'
 export default {
@@ -198,12 +99,21 @@ export default {
       sortByListeners: false,
       currentPage: 1,
       albumsIsCollected: [],
+      logStack: [],
+      isExporting: false,
       fetchSimliar: false,
       allAlbumIndex: {},
       cloumnCount: 4,
       currentFound: null,
       sortByType: 'rec',
       bySource: 'all',
+      needExports: [],
+      exportTypes: [
+        { label: '收藏歌曲', value: 'song' },
+        { label: '收藏专辑', value: 'album' },
+        { label: '关注艺人', value: 'artist' },
+        { label: '歌单', value: 'collect' },
+      ],
       sourceOptions: [
         { label: '全部', value: 'all' },
         { label: '豆瓣音乐', value: 'douban' },
@@ -314,13 +224,13 @@ export default {
     },
     initliaze() {
       var recid = this.$route.query.recid || null
-      this.loadLocalData();
+      // this.loadLocalData();
       if(recid == null) {
         var self = this;
         (function check() {
           self.extensionInstalled = typeof window.$_musichelper != 'undefined';
           if(self.extensionInstalled) {
-            self.recom();
+            self.checkpoint();
             return
           }
           setTimeout(check, 800);
@@ -366,171 +276,98 @@ export default {
       const parsedAlbums = this.processShowData(albums)
       this.albums = _.shuffle(parsedAlbums);
     },
-    async createCustom() {
-      const customssongs = this.customsongs.split("\n")
-      .map(_ => _.split("\t"))
-      .map(_ => {
-        return {
-          song: _[0],
-          artist: _[1],
-          album: _[2]
-        };
-      }).filter(_ => _.artist);
-      if(customssongs.length == 0) {
-        alert('解析失败');
-        return
-      }
-      this.albums = []
-      const songHash = md5(JSON.stringify(customssongs)).substr(0, 6);
-      const result = await this.recom(false, {
-        type: 'custom_' + songHash,
-        songs: customssongs
-      })
-      this.visible = false;
-      // console.log(result)
-      this.$router.push({
-        query: {
-          recid: result.id
-        }
-      })
-    },
-    playAlbum(album) {
-      window.$player.playAlbum(album.albumKeyword)
-    },
-    async loadLocalData() {
-      let isAlive = true
+
+    async loadState() {
+      const taskDocId = 'current_task'
       try {
-        const { data } = await api.get('/api/song/query', {
-         params: {
-            rawSql: 'select count(distinct(song_name)) as songs, album_name as album, artist_name as artist, album_logo from songs group by album_name, artist_name  order by songs desc',
-          }
-        });
-        this.albumsIsCollected = data;
+        const eDoc = await taskDB.get(taskDocId)
+        return eDoc.state
+      } catch (e) {}
+
+      var jobTypes = [].concat(this.needExports);
+      var initailState = {
+        jobTypes: jobTypes,
+        leftTypes: jobTypes
+      }
+      return initailState
+    },
+
+    async checkpoint() {
+      const hasNotDoneTask = await this.hasTaskNotDone();
+      if(hasNotDoneTask) {
+        this.runExportTask();
+      }
+    },
+
+    async hasTaskNotDone() {
+      const taskDocId = 'current_task'
+      try {
+        const eDoc = await taskDB.get(taskDocId)
+        return true
+      } catch (e) {}
+      return false
+    },
+
+    async saveTaskProgress(state) {
+      const taskDocId = 'current_task'
+      try {
+        const eDoc = await taskDB.get(taskDocId)
+        eDoc.state = state
+        eDoc.time = Date.now()
+        await taskDB.put(eDoc)
       } catch (e) {
-        isAlive = false
-        // this.albumsIsCollected = 
+        console.log('update failed try create')
+        await taskDB.put({
+            _id: taskDocId,
+            state: state,
+            time: Date.now()
+        })
       }
-
-      if(!isAlive) {
-        try {
-            const eDoc = await recentDb.get("all_songs")
-            // eDoc.all_songs = {
-            //   xiami: allData[0],
-            //   cloudmusic: allData[1]
-            // }
-
-            const allRows = [].concat(eDoc.all_songs.xiami, eDoc.all_songs.cloudmusic)
-            // console.log('eDoc.all_songs ', eDoc.all_songs )
-            this.albumsIsCollected = allRows
-            // eDoc.all_songs = Date.now()
-            // await recentDb.put(eDoc)
-        } catch (e) {}
-      }
-     
-      // console.log('loadLocalData', data)
     },
-    async recom(force = false, opts = {}) {
-      try {
-        _hmt && _hmt.push(['_trackEvent', 'explre', 'recom', 'init']);
-      } catch (e) {}
 
-      const type = opts.type || 'recent';
-      const isNotRecent = type != 'recent'
-      let recBySongs = []
-
-      if(isNotRecent) {
-        recBySongs = opts.songs;
-      }
-
-      if(!isNotRecent) {
-        const recentDocId = 'recent';
-        let cacheDoc = null
+    async runExportTask() {
+      var initailState = await this.loadState();
+      this.isExporting = true;
+      await this.saveTaskProgress(initailState)
+      var runTypes = [].concat(initailState.leftTypes);
+      for (let index = 0; index < runTypes.length; index++) {
         try {
-          cacheDoc = await recentDb.get(recentDocId)
-        } catch (e) {}
-        const needFetch = cacheDoc == null || cacheDoc != null && ((Date.now() - cacheDoc.time) > 8 * 60 * 60 * 1000);
-        let rencetSongs = []
-          console.log('cacheDoc', cacheDoc, 'needFetch', needFetch)
-        if(needFetch) {
-          this.isScaning = true
-          try {
-            const allData = await Promise.all([
-              getXiamiCollect(),
-              getCloudMusicCollect()
-            ]);
-            rencetSongs = [].concat(allData[1].slice(0, 50), allData[0].slice(0, 50))
-            console.log('rencetSongs', rencetSongs)
-            if (rencetSongs.length) {
-              cacheDoc = cacheDoc == null ? {
-                _id: recentDocId
-              } : cacheDoc
-              cacheDoc.songs = rencetSongs;
-              cacheDoc.time = Date.now()
-              await recentDb.put(cacheDoc)
-              this.notFound = false
-            } else {
-              this.notFound = true
-              console.log('not found songs')
+          const needExport = runTypes.pop();
+          const expotInstance = new Exporter({
+            type: needExport,
+            progress: function(meta) {
+              console.log('meta', meta)
             }
-
-            const allSongsDocId = 'all_songs';
-            try {
-              const eDoc = await recentDb.get(allSongsDocId)
-              eDoc.all_songs = {
-                xiami: allData[0],
-                cloudmusic: allData[1]
-              }
-              eDoc.time = Date.now()
-              await recentDb.put(eDoc)
-            } catch (e) {
-              console.log('update failed try create')
-              await recentDb.put({
-                _id: allSongsDocId,
-                all_songs: {
-                  xiami: allData[0],
-                  cloudmusic: allData[1]
-                },
-                time: Date.now()
-              })
-            }
-          } catch (e) {
-          }
-          this.isScaning = false
-        } else {
-          rencetSongs = cacheDoc.songs
+          })
+          await expotInstance.export();
+          await this.saveTaskProgress({
+            jobTypes: initailState.jobTypes,
+            leftTypes: runTypes
+          })
+        } catch (e) {
+          console.log('export failed', e)
         }
-        recBySongs = rencetSongs;
       }
-      
-      try {
-        _hmt && _hmt.push(['_trackEvent', 'explre', 'rencentSongs', rencetSongs.length]);
-      } catch (e) {}
-      // const xiami = await getXiamiCollect();
-      // const songs = await getCloudMusicCollect();
-      // const recent = songs.splice(0, 40)
-      // rencetSongs = rencetSongs.slice(0, 50)
-      console.log('recBySongs', recBySongs)
-      this.fetchSimliar = true
-      var self = this
-      const recoResult = await getAlbums(recBySongs, {
-        type: type,
-        progress: function(data) {
-          var newData = JSON.parse(JSON.stringify(data));
-          data.items = self.processShowData(data.items)
-          self.currentFound = data
-          console.log('progress.data', data)
-        }
-        // force: true
-      })
+      console.log('all task done')
+      this.isExporting = false;
+    },
 
-      const albums = recoResult.albums
-      try {
-        _hmt && _hmt.push(['_trackEvent', 'explre', 'getAlbums', albums.length]);
+    async exportTask(force = false, opts = {}) {
+      try { 
+        const ximiSongs = await getXiamiCollect()
+        if(ximiSongs.length === 0) {
+          console.log('not login')
+          this.notFound = true;
+        } else {
+          console.log('login')
+        }
       } catch (e) {}
-      this.fetchSimliar = false
-      const parsedAlbums = this.processShowData(albums)
-      this.albums = _.shuffle(parsedAlbums);
-      return recoResult
+
+      if(this.notFound) {
+        alert('未登录');
+        return;
+      }
+      await this.runExportTask();
     }
   }
 }

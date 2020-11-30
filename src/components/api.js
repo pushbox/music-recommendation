@@ -21,6 +21,8 @@ export function httpGetByExtension(url, timeout = 30000) {
   });
 }
 
+window.httpGetByExtension = httpGetByExtension
+
 export async function httpGet(url, timeout = 30000) {
   if(url.indexOf('last.fm') > -1) {
     try {

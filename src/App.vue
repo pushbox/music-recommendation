@@ -23,6 +23,12 @@
               <span>最近收藏</span>
             </router-link>
           </a-menu-item>
+          <a-menu-item key="/export" style="margin-top:0">
+            <router-link :to="'/export'">
+              <a-icon type="download" />
+              <span>虾米导出</span>
+            </router-link>
+          </a-menu-item>
           <!-- <a-menu-item key="/artists" >
           <router-link :to="'/artists'">
             <a-icon type="user" />

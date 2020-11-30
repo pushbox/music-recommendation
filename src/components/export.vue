@@ -2,9 +2,9 @@
 <div>
   
   <div class="page" v-if="notFound">
-    <h2 class="page-title">未找到收藏歌曲</h2>
+    <h2 class="page-title">未登录</h2>
     <div class="page-content">
-      <p>请登陆你的<a href="https://music.163.com/" target="_blank">网易云音乐</a>，<a href="https://www.xiami.com/" target="_blank">虾米音乐</a>账号</p>
+      <p>请登陆你的<a href="https://www.xiami.com/" target="_blank">虾米音乐</a>账号</p>
       <p>登陆后请刷新本页！</p>
     </div>
   </div>
@@ -41,7 +41,7 @@
 
     <div class="page-content">
      <!-- <a-card :bordered="true" type="inner" :bodyStyle="{ padding: '25px 20px' }"> -->
-      <div v-if="!isExporting">
+      <div v-if="!isExporting && !exportDone">
         <h2>虾米音乐导出工具</h2>
         <div style="padding: 25px 0" class="filter-bar" v-if="!fetchSimliar && !isScaning">
             <a-checkbox-group :options="exportTypes" v-model="needExports" style="margin-right: 10px"/>
@@ -50,8 +50,36 @@
           开始导出
         </a-button>
       </div>
+      <div v-if="!isExporting && exportDone">
+        <h2>导出成功！<a-button type="primary" style="margin-left: 40px" @click="resetExport">
+          重新导出
+        </a-button></h2>
+        <div>
+          <a-tabs>
+            <a-tab-pane :key="dataTab.type" :tab="dataTab.name" v-for="dataTab in dataTabs">
+
+            <a-card :bordered="true" type="inner"  :bodyStyle="{ padding: '1px 0'}"> 
+        <div slot="title">
+          {{ dataTab.name }} ({{ dataTab.total }})
+        </div>
+        <div class="operate" slot="extra">
+          <a-button type="dashed" style="margin-right: 8px" @click="download(dataTab)" icon="download">导出</a-button>
+        </div>
+          <a-table bordered :columns="dataTab.columns" :data-source="dataTab.data" :pagination="paginationProps">
+            <div slot="html" class="custom-desc" slot-scope="text" v-html="text" style="width: 250px"></div>
+            <pre slot="code" slot-scope="text" v-html="text"  style="width: 450px"></pre>
+          </a-table>
+      </a-card>
+              
+            
+            </a-tab-pane>
+          </a-tabs>
+        </div>
+        
+      </div>
       <div v-if="isExporting">
         <h2>正在导出</h2>
+        <p>请耐心等待... 不要关闭页面!</p>
       </div>
      <!-- </a-card> -->
      <div id="alllogs" v-if="logStack.length">
@@ -69,7 +97,7 @@ import { getAlbumsByRecId, getAlbums, getCloudMusicCollect, getXiamiCollect } fr
 import axios from 'axios'
 import { getResizeImage } from './api'
 import { Exporter } from './exporter'
-
+const moment = require("moment");
 
 const api = axios.create({
   baseURL: "http://localhost:8956",
@@ -79,6 +107,17 @@ import md5 from "js-md5";
 var PouchDB = require("pouchdb").default;
 var taskDB = new PouchDB("export_tasks");
 const _ = require('lodash')
+window._ = _;
+
+function convertHTMLEntity(text){
+    const span = document.createElement('span');
+    return text
+    .replace(/&[#A-Za-z0-9]+;/gi, (entity,position,text)=> {
+        span.innerHTML = entity;
+        return span.innerText;
+    });
+}
+
 import ScaleLoader from 'vue-spinner/src/ScaleLoader.vue'
 export default {
   name: 'HelloWorld',
@@ -93,6 +132,7 @@ export default {
       notFound: false,
       exludeListened: true,
       sortByListeners: false,
+      exportDone: false,
       currentPage: 1,
       albumsIsCollected: [],
       logStack: [],
@@ -104,6 +144,65 @@ export default {
       sortByType: 'rec',
       bySource: 'all',
       needExports: [],
+      forceExport: false,
+      dataTabs: [],
+      tableColumns: {
+        artist: [
+          {
+            title: '艺术家',
+            dataIndex: 'artist',
+          },
+        ],
+        album: [
+          {
+            title: '专辑',
+            dataIndex: 'album_name',
+            width: 200,
+          },
+          {
+            title: '艺术家',
+            dataIndex: 'artist',
+          },
+          {
+            title: '收藏时间',
+            dataIndex: 'faved_time',
+          }
+        ],
+        song: [
+          {
+            title: '歌曲',
+            dataIndex: 'song_name',
+            width: 200,
+          },
+          {
+            title: '艺术家',
+            dataIndex: 'artist',
+          }
+        ],
+        collect: [
+          {
+            title: '歌单名称',
+            dataIndex: 'collect_name',
+          },
+          {
+            title: '描述',
+            dataIndex: 'full_desc',
+            scopedSlots: { customRender: 'html' },
+            width: 100
+          },
+          {
+            title: '详情',
+            dataIndex: 'infos_display',
+            scopedSlots: { customRender: 'code' },
+            width: 100
+          },
+          {
+            title: '歌曲',
+            dataIndex: 'songs_display',
+            scopedSlots: { customRender: 'code' },
+          }
+        ]
+      },
       exportTypes: [
         { label: '收藏歌曲', value: 'song' },
         { label: '收藏专辑', value: 'album' },
@@ -159,7 +258,7 @@ export default {
         current: this.currentPage,
         pageSizeOptions: ['48', '96', '200', '800'],
         defaultPageSize: 48,
-        showTotal: total => `全部 ${total} 张专辑`,
+        showTotal: total => `全部 ${total} 结果`,
         onChange: (page, pageSize) => {
           this.currentPage = page
           console.log(page, pageSize)
@@ -215,6 +314,107 @@ export default {
     }
   },
   methods: {
+     download (dataTab) {
+      console.log('download')
+      import('@/Export2Excel').then(excel => {
+        // console.log('start', this.$refs.table.localDataSource)
+        // const rowData = this.$refs.table.localDataSource
+        const typeHeaders = {
+          artist: [
+            {
+              name: '艺术家',
+              dataIndex: 'artist'
+            }, {
+              name: '标签',
+              dataIndex: 'tags'
+            }, {
+              name: '头像',
+              dataIndex: 'cover'
+            }
+          ],
+          song: [
+            {
+              title: '歌曲',
+              dataIndex: 'song_name',
+              width: 200,
+            },
+            {
+              title: '艺术家',
+              dataIndex: 'artist',
+            }
+          ],
+          album: [
+            {
+              name: '艺术家',
+              dataIndex: 'artist'
+            }, {
+              name: '专辑',
+              dataIndex: 'album_name'
+            }, {
+              name: '收藏时间',
+              dataIndex: 'faved_time'
+            }, {
+              name: '标签',
+              dataIndex: 'tags'
+            }, {
+              name: '封面',
+              dataIndex: 'cover'
+            }
+          ],
+          collect: [
+            {
+              title: '歌单名称',
+              dataIndex: 'collect_name',
+            },
+            {
+              title: '描述',
+              dataIndex: 'full_desc',
+              scopedSlots: { customRender: 'html' },
+              width: 100
+            },
+            {
+              title: '详情',
+              dataIndex: 'infos_display',
+              scopedSlots: { customRender: 'code' },
+              width: 100
+            },
+            {
+              title: '歌曲',
+              dataIndex: 'songs_display',
+              scopedSlots: { customRender: 'code' },
+            }
+          ]
+        }
+
+        const currentHeaders = typeHeaders[dataTab.type]
+        const tHeader = currentHeaders.map(_ => _.name ? _.name : _.title)
+        const data = []
+        dataTab.data.forEach(row => {
+          const rowItem = []
+          // rowItem.push(row.song_name)
+          // rowItem.push(row.artist_name)
+          // rowItem.push(row.album_name)
+          data.push(currentHeaders.map(_ => {
+            if(row[_.dataIndex]) {
+              return row[_.dataIndex];
+            }
+            return '';
+          }))
+        })
+        const filename = [
+          dataTab.name,
+          moment().format('YYYY-MM-DD_hh:mm:ss')
+        ].join('-')
+
+        excel.export_json_to_excel({
+          header: tHeader,
+          data,
+          filename: filename + '.xlsx',
+          autoWidth: true,
+          bookType: 'xlsx'
+        })
+      })
+    },
     goTop() {
       document.querySelector("#main-viewport").scrollTop = 0
     },
@@ -311,6 +511,19 @@ export default {
       }
     },
 
+    async resetExport() {
+      const taskDocId = 'current_task'
+      await taskDB.get(taskDocId).then(function (doc) {
+        doc._deleted = true;
+        return taskDB.put(doc);
+      });
+      this.forceExport = true;
+      this.exportDone = false;
+      this.isExporting = false;
+
+      console.log('resetExport')
+    },
+
     async saveTaskProgress(state) {
       const taskDocId = 'current_task'
       try {
@@ -332,6 +545,10 @@ export default {
       var self = this;
       var initailState = await this.loadState();
       this.isExporting = true;
+      const runForce = this.forceExport
+      if(this.forceExport) {
+        this.forceExport = false;
+      }
       await this.saveTaskProgress(initailState)
       var runTypes = [].concat(initailState.leftTypes);
       for (let index = 0; index < runTypes.length; index++) {
@@ -339,12 +556,11 @@ export default {
           const needExport = runTypes.pop();
           const expotInstance = new Exporter({
             type: needExport,
+            force: runForce,
             progress: function(meta) {
-
               if(meta.progressType == 'fetch') {
                 self.addLog(`准备提取: ${meta.url}`)
               }
-
               if(meta.progressType == "pageend") {
                 self.addLog(`提取完毕: 发现${meta.state.pageData.length}条数据; ${meta.state.pageMeta}`)
               }
@@ -365,7 +581,63 @@ export default {
         }
       }
       console.log('all task done')
+      this.exportDone = true;
       this.isExporting = false;
+      this.loadTaskData(initailState);
+    },
+
+    async loadTaskData(initailState) {
+      const allTypes = initailState.jobTypes
+      const dataByType = {}
+      const dataTables = []
+    
+      for (let index = 0; index < allTypes.length; index++) {
+        try {
+          const jobType = allTypes[index];
+          const expotInstance = new Exporter({
+            type: jobType
+          })
+          const typeResults = await expotInstance.getData();
+          dataByType[jobType] = typeResults
+          let dataRows = JSON.parse(JSON.stringify(typeResults.rows));
+          if(jobType === 'collect') {
+            dataRows = dataRows.map(_ => {
+              try {
+                _.full_desc = _.full_desc && convertHTMLEntity(_.full_desc);
+              } catch (e) {}
+              _.songs_display = _.songs.map(c => {
+                return [
+                  [
+                  c.song_name.trim(),
+                  c.artist_name
+                ].join(' - '),
+                  c.quote.trim()
+                ].join("\t")
+              }).join("\n")
+              _.infos_display = _.infos.map(c => {
+                return  [
+                  c.name,
+                  c.value
+                ].join(':')
+              }).join("\n")
+              return _;
+            })
+          }
+          dataTables.push({
+            type: jobType,
+            name: this.exportTypes.filter(_ => _.value === jobType)[0].label,
+            total: typeResults.rows.length,
+            data: dataRows,
+            columns: this.tableColumns[jobType] || [],
+            raw: typeResults
+          })
+        } catch (e) {
+          console.log('export failed', e)
+        }
+      }
+
+      this.dataTabs = dataTables
+      console.log(dataTables)
     },
 
     async exportTask(force = false, opts = {}) {
@@ -511,6 +783,13 @@ position: absolute;
   padding: 20px;
   margin-top: 20px;
   line-height: 180%;
+}
+
+</style>
+
+<style>
+.custom-desc img {
+  max-width: 100%;
 }
 
 </style>

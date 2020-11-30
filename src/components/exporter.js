@@ -50,16 +50,39 @@ export class Exporter {
     }
 
     async init() {
+        console.log('init', 'force', this.force)
+        const dataDocId = `${this.type}_rows`
         const stateDocId = 'last_state';
+        const db  = this.database
+
+        if(this.force) {
+            try {
+                await db.get(stateDocId).then(function (doc) {
+                    doc._deleted = true;
+                    return db.put(doc);
+                });
+            } catch (e) {
+                console.log('clear databse failed', e)
+            }
+
+            try {
+                await db.get(dataDocId).then(function (doc) {
+                    doc._deleted = true;
+                    return db.put(doc);
+                });
+            } catch (e) {
+                console.log('clear databse failed', e)
+            }
+        }
+
         try {
             const eDoc = await this.database.get(stateDocId)
             console.log('init', 'last state', eDoc)
             this.state = eDoc.last_state
-        } catch (e) {
-        }
+        } catch (e) {}
 
         try {
-            const dataDocId = `${this.type}_rows`
+           
             const allData = await this.database.get(dataDocId)
             console.log('allData', allData)
         } catch (e) {}
@@ -73,7 +96,7 @@ export class Exporter {
             eDoc.time = Date.now()
             await this.database.put(eDoc)
         } catch (e) {
-            console.log('update failed try create')
+            console.log('update failed try create', e)
             await this.database.put({
                 _id: stateDocId,
                 last_state: state,
@@ -105,6 +128,14 @@ export class Exporter {
         });
     }
 
+    async getData() {
+        const dataDocId = `${this.type}_rows`
+        const dataDoc = await this.database.get(dataDocId)
+        // dataDoc.rows = [].concat(dataDoc.rows, state.pageData)
+        // dataDoc.time = Date.now()
+        return dataDoc;
+    }
+    
     async export() {
         await this.init();
         if(this.state != null) {
@@ -290,7 +321,7 @@ export class Exporter {
                             return {
                                 detail_url: $$(this).find('.song_name a').attr('href'),
                                 song_name: songNames[0].trim(),
-                                artist_name: songNames.length > 1 ?songNames[1].trim() : null,
+                                artist_name: songNames.length > 1 ? songNames[1].split("\n")[0].trim() : null,
                                 quote: $$(this).find('.s_quote').eq(1).text(),
                             };
                         }).get();
@@ -367,6 +398,7 @@ export class Exporter {
                 }
 
                 let nextPageUrl = $('.p_redirect_l');
+                console.log('nextPage', nextPageUrl.length)
                 if(nextPageUrl.length) {
                     currentPage++
                     pageUrl = 'https://emumo.xiami.com' + nextPageUrl.attr('href')

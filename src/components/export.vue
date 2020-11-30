@@ -38,21 +38,10 @@
     </div>
   </div>
   <div class="page" v-if="extensionInstalled && !notFound || fetchSimliar">
-     <!-- <div class="page-content">
-       <div v-if="fetchSimliar || isScaning">
-          <scale-loader class="loading" style="text-align:left; margin-bottom: 10px" :loading="true" color="white" ></scale-loader>
-          <p v-if="isScaning">
-            正在扫描你最近收藏的歌曲...
-          </p>
-          <p v-if="fetchSimliar">
-          正在生成推荐...<br>
-          不要关闭页面！
-          </p>
-       </div>
-    </div> -->
 
     <div class="page-content">
      <!-- <a-card :bordered="true" type="inner" :bodyStyle="{ padding: '25px 20px' }"> -->
+      <div v-if="!isExporting">
         <h2>虾米音乐导出工具</h2>
         <div style="padding: 25px 0" class="filter-bar" v-if="!fetchSimliar && !isScaning">
             <a-checkbox-group :options="exportTypes" v-model="needExports" style="margin-right: 10px"/>
@@ -60,7 +49,14 @@
         <a-button type="primary" size="large" @click="exportTask">
           开始导出
         </a-button>
+      </div>
+      <div v-if="isExporting">
+        <h2>正在导出</h2>
+      </div>
      <!-- </a-card> -->
+     <div id="alllogs" v-if="logStack.length">
+       <div v-for="log in logStack" v-html="log" class="log-item"></div>
+     </div>
     </div>
     <!-- <div v-if="albums.length" style="padding: 0 10px 20px">{{ showAlbums.length }}张</div> -->
   </div>
@@ -308,6 +304,13 @@ export default {
       return false
     },
 
+    addLog(log) {
+      this.logStack.unshift(log);
+      if(this.logStack.length > 50) {
+        this.logStack.pop();
+      }
+    },
+
     async saveTaskProgress(state) {
       const taskDocId = 'current_task'
       try {
@@ -326,6 +329,7 @@ export default {
     },
 
     async runExportTask() {
+      var self = this;
       var initailState = await this.loadState();
       this.isExporting = true;
       await this.saveTaskProgress(initailState)
@@ -336,6 +340,18 @@ export default {
           const expotInstance = new Exporter({
             type: needExport,
             progress: function(meta) {
+
+              if(meta.progressType == 'fetch') {
+                self.addLog(`准备提取: ${meta.url}`)
+              }
+
+              if(meta.progressType == "pageend") {
+                self.addLog(`提取完毕: 发现${meta.state.pageData.length}条数据; ${meta.state.pageMeta}`)
+              }
+
+               if(meta.progressType == "wait") {
+                self.addLog(`等待 ${meta.duration}毫秒`)
+              }
               console.log('meta', meta)
             }
           })
@@ -488,6 +504,13 @@ position: absolute;
 .filter-bar {
   padding: 0 10px;
   margin-bottom: 12px;
+}
+
+#alllogs {
+  background: #222;
+  padding: 20px;
+  margin-top: 20px;
+  line-height: 180%;
 }
 
 </style>

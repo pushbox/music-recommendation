@@ -26,11 +26,12 @@ export class Exporter {
         this.isClosed = false
         this.state = null
         this.progressHandler = progress
+        this.waitDuration = 2 * 1000;
     }
 
     async loadPage(url) {
         this.progressHandler && this.progressHandler({
-            type: 'fetch',
+            progressType: 'fetch',
             url: url
         });
         return await httpGetByExtension(url);
@@ -42,7 +43,7 @@ export class Exporter {
 
     async waitTimer(du) {
         this.progressHandler && this.progressHandler({
-            type: 'wait',
+            progressType: 'wait',
             duration: du
         });
         await wait(du)
@@ -172,7 +173,8 @@ export class Exporter {
                     pageData: pageData,
                     page: currentPage,
                     reachEnd: nextPageUrl.length == 0,
-                    nextPageUrl: pageUrl
+                    nextPageUrl: pageUrl,
+                    pageMeta: $('.all_page span').text()
                 });
                 if( nextPageUrl.length == 0) {
                     console.log('no more page')
@@ -180,7 +182,7 @@ export class Exporter {
                 }
                 console.log('pageData', pageData, nextPageUrl.attr('href'));
             } catch (e) {}
-            await this.waitTimer(4 * 1000);
+            await this.waitTimer(this.waitDuration);
             console.log('wait', '3 second')
         }
 
@@ -225,7 +227,8 @@ export class Exporter {
                     pageData: pageData,
                     page: currentPage,
                     reachEnd: nextPageUrl.length == 0,
-                    nextPageUrl: pageUrl
+                    nextPageUrl: pageUrl,
+                    pageMeta: $('.all_page span').text()
                 });
                 if( nextPageUrl.length == 0) {
                     console.log('no more page')
@@ -233,7 +236,7 @@ export class Exporter {
                 }
                 console.log('pageData', pageData, nextPageUrl.attr('href'));
             } catch (e) {}
-            await this.waitTimer(4 * 1000);
+            await this.waitTimer(this.waitDuration);
             console.log('wait', '3 second')
         }
 
@@ -297,7 +300,7 @@ export class Exporter {
                     } catch (e) {
                         console.log('fetch detail error', e)
                     }
-                    await this.waitTimer(4 * 1000);
+                    await this.waitTimer(this.waitDuration);
                 }
 
                 let nextPageUrl = $('.p_redirect_l');
@@ -321,7 +324,7 @@ export class Exporter {
                 // break;
                 console.log('pageData', pageData, nextPageUrl.attr('href'));
             } catch (e) {}
-            await this.waitTimer(4 * 1000);
+            await this.waitTimer(this.waitDuration);
             console.log('wait', '3 second')
         }
 
@@ -383,7 +386,7 @@ export class Exporter {
                 // break;
                 console.log('pageData', pageData, nextPageUrl.attr('href'));
             } catch (e) {}
-            await this.waitTimer(4 * 1000);
+            await this.waitTimer(this.waitDuration);
             console.log('wait', '3 second')
         }
         return true;

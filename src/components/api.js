@@ -46,7 +46,7 @@ export function removeBlankToSpace(str) {
 
 export function getResizeImage (src, size = null) {
   console.log('getResizeImage')
-  const serverNum = Math.floor(Math.random() * 4)
+  const serverNum = Math.floor(Math.random() * 3)
   const rawPath = src.replace('https://', '').replace('http://', '')
   return size ? `https://i${serverNum}.wp.com/${rawPath}?resize=${size.width}%2C${size.height}` :  `https://i${serverNum}.wp.com/${rawPath}`
 }

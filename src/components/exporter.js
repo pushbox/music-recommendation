@@ -164,11 +164,17 @@ export class Exporter {
 
     async exportAlbum() {
         let pageUrl = 'https://emumo.xiami.com/space/lib-album';
+        let currentPage = 0;
         if(this.state != null) {
             pageUrl = this.state.nextPageUrl
+            if(this.state.currentPage) {
+                currentPage = this.state.currentPage
+            }
         }
-        console.log('exportAlbum.start', pageUrl)
-        let currentPage = 0;
+        console.log('exportAlbum.start', {
+            pageUrl,
+            currentPage
+        })
         for (let index = 0; index < 500; index++) {
             if(this.isClosed) {
                 console.log('time to close')
@@ -203,6 +209,7 @@ export class Exporter {
                 await this.saveProgress({
                     pageData: pageData,
                     page: currentPage,
+                    currentPage: parseInt($('.p_curpage').text()),
                     reachEnd: nextPageUrl.length == 0,
                     nextPageUrl: pageUrl,
                     pageMeta: $('.all_page span').text()
@@ -223,11 +230,17 @@ export class Exporter {
 
     async exportSong() {
         let pageUrl = 'https://emumo.xiami.com/space/lib-song';
+        let currentPage = 0;
         if(this.state != null) {
             pageUrl = this.state.nextPageUrl
+            if(this.state.currentPage) {
+                currentPage = this.state.currentPage
+            }
         }
-        console.log('exportSong.start', pageUrl)
-        let currentPage = 0;
+        console.log('exportSong.start', {
+            pageUrl,
+            currentPage
+        })
         for (let index = 0; index < 500; index++) {
             if(this.isClosed) {
                 console.log('time to close')
@@ -257,6 +270,7 @@ export class Exporter {
                 await this.saveProgress({
                     pageData: pageData,
                     page: currentPage,
+                    currentPage: parseInt($('.p_curpage').text()),
                     reachEnd: nextPageUrl.length == 0,
                     nextPageUrl: pageUrl,
                     pageMeta: $('.all_page span').text()
@@ -277,11 +291,17 @@ export class Exporter {
 
     async exportCollect() {
         let pageUrl = 'https://emumo.xiami.com/space/collect';
+        let currentPage = 0;
         if(this.state != null) {
             pageUrl = this.state.nextPageUrl
+            if(this.state.currentPage) {
+                currentPage = this.state.currentPage
+            }
         }
-        console.log('exportCollect.start', pageUrl)
-        let currentPage = 0;
+        console.log('exportCollect.start', {
+            pageUrl,
+            currentPage
+        })
         for (let index = 0; index < 500; index++) {
             if(this.isClosed) {
                 console.log('time to close')
@@ -344,6 +364,7 @@ export class Exporter {
                     pageData: pageData,
                     page: currentPage,
                     nextPageUrl: pageUrl,
+                    currentPage: parseInt($('.p_curpage').text()),
                     reachEnd: nextPageUrl.length == 0,
                     pageMeta: $('.all_page span').text()
                 });
@@ -364,11 +385,17 @@ export class Exporter {
 
     async exportArtist() {
         let pageUrl = 'https://emumo.xiami.com/space/lib-artist';
+        let currentPage = 0;
         if(this.state != null) {
             pageUrl = this.state.nextPageUrl
+            if(this.state.currentPage) {
+                currentPage = this.state.currentPage
+            }
         }
-        console.log('exportArtist.start', pageUrl)
-        let currentPage = 0;
+        console.log('exportArtist.start', {
+            pageUrl,
+            currentPage
+        })
         for (let index = 0; index < 500; index++) {
             if(this.isClosed) {
                 console.log('time to close')
@@ -409,6 +436,7 @@ export class Exporter {
                     page: currentPage,
                     nextPageUrl: pageUrl,
                     reachEnd: nextPageUrl.length == 0,
+                    currentPage: parseInt($('.p_curpage').text()),
                     pageMeta: $('.all_page span').text()
                 });
                 if( nextPageUrl.length == 0) {

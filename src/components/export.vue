@@ -69,7 +69,7 @@
           {{ dataTab.name }} ({{ dataTab.total }})
         </div>
         <div class="operate" slot="extra">
-          <a-button type="dashed" style="margin-right: 8px" @click="download(dataTab)" icon="download">导出</a-button>
+          <a-button type="dashed" style="margin-right: 8px" @click="download(dataTab)" icon="download">下载</a-button>
         </div>
           <a-table bordered :columns="dataTab.columns" :data-source="dataTab.data" :pagination="paginationProps">
             <div slot="html" class="custom-desc" slot-scope="text" v-html="text" style="width: 250px"></div>
@@ -557,9 +557,14 @@ export default {
       }
       await this.saveTaskProgress(initailState)
       var runTypes = [].concat(initailState.leftTypes);
-      for (let index = 0; index < runTypes.length; index++) {
+      for (let index = 0; index < 6; index++) {
         try {
           const needExport = runTypes.pop();
+          if(!needExport) {
+            console.log('all done');
+            break;
+          }
+          self.addLog(`准备导出: ${needExport}`)
           const expotInstance = new Exporter({
             type: needExport,
             force: runForce,

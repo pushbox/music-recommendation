@@ -38,8 +38,14 @@
     </div>
   </div>
   <div class="page" v-if="extensionInstalled && !notFound || fetchSimliar">
-
     <div class="page-content">
+      <div style="width: 780px; margin-bottom: 15px">
+        <a-alert  type="info" closable>
+          <span slot="message">
+            本工具目前最多只能导出最多200页的数据，收藏歌曲数超过5000的请使用windows桌面端的歌单助手！<a href="https://support.qq.com/products/284751/faqs/83552" target="_blank" style="color: red">使用教程</a>
+          </span>
+        </a-alert>
+      </div>
      <!-- <a-card :bordered="true" type="inner" :bodyStyle="{ padding: '25px 20px' }"> -->
       <div v-if="!isExporting && !exportDone">
         <h2>虾米音乐导出工具</h2>
@@ -520,7 +526,7 @@ export default {
       this.forceExport = true;
       this.exportDone = false;
       this.isExporting = false;
-
+      this.logStack = [];
       console.log('resetExport')
     },
 

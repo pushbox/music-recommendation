@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <!-- <router-view></router-view> -->
+    <a-alert message="请使用电脑端Chrome浏览器打开！" v-if="isMobile" banner />
     <a-layout
       id="components-layout-demo-custom-trigger"
       
@@ -74,6 +75,7 @@ export default {
   name: "music-exporter",
   data() {
     return {
+      isMobile: false,
       selectedKeys: [this.$route.path]
     };
   },
@@ -85,7 +87,12 @@ export default {
       this.selectedKeys = [this.$route.path];
     }
   },
-
+  mounted() {
+    var ua = navigator.userAgent;
+    if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS/i.test(ua)){
+      this.isMobile = true
+    }
+  },
 };
 </script>
 

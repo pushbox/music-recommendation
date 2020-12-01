@@ -257,7 +257,7 @@ export class Exporter {
                     const listItemDom = listItemDoms.eq(index);
                     const rowData = {};
                     rowData.song_name = listItemDom.find('a').eq(0).text();
-                    rowData.artist = listItemDom.find('a').eq(1).text();
+                    rowData.artist = listItemDom.find('a.artist_name').text();
                     pageData.push(rowData);
                 }
 

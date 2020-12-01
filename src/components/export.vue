@@ -4,7 +4,7 @@
   <div class="page" v-if="notFound">
     <h2 class="page-title">未登录</h2>
     <div class="page-content">
-      <p>请登陆你的<a href="https://www.xiami.com/" target="_blank">虾米音乐</a>账号</p>
+      <p>请登陆你的<a href="https://passport.xiami.com/?redirectURL=https://emumo.xiami.com" target="_blank">虾米音乐</a>账号</p>
       <p>登陆后请刷新本页！</p>
     </div>
   </div>

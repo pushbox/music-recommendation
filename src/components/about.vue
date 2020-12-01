@@ -1,5 +1,5 @@
 <template>
-  <a-card :bordered="true" type="inner" :bodyStyle="{ padding: '10px 20px' }">
+  <a-card :bordered="true" type="inner" :bodyStyle="{ padding: '10px 20px', color: 'rgb(119, 119, 119)' }">
     <div style="padding: 15px"></div>
     <h2>推荐机制</h2>
     <p>基于当前浏览器登录过的网易云音乐账号+虾米音乐最近收藏的50首歌。</p>
@@ -10,7 +10,9 @@
       <li><a href="https://www.last.fm/" target="_blank">last.fm</a></li>
       <li><a href="https://music.douban.com/tag/" target="_blank">豆瓣音乐</a></li>
     </ul>
-    <div style="text-align: left; padding-top: 50px;" class="about-page">
+    <h3  style="margin-top:25px">开发背景</h3>
+    <a href="https://mp.weixin.qq.com/s/x_RWWal1l1kzJw62GtnW0w" target="_blank">歌单导出 + 基于last.fm的音乐专辑推荐</a>
+    <div style="text-align: left; padding-top: 40px;" class="about-page">
       <a
         href="https://music.wechatsync.com/?utm_source=extension_about"
         target="_blank"
@@ -22,7 +24,7 @@
       >
         <p>
           作者:
-          <a href="https://www.douban.com/people/52076105/" target="_blank"
+          <a href="https://blog.dev4eos.com/" target="_blank"
             >fun</a
           >
         </p>
